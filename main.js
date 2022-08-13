@@ -12,8 +12,9 @@ function phraseLength(wordIndex){
 
     if(isNumber(word)||isString(word)){}
 
-    else if(word=="{"){ while(true){
-        if(words[nextIndex()]=="}"){
+    else if(["{","[","("].indexOf(word)!=-1){ while(true){
+        var matchingParens={"{":"}","[":"]","(":")"}
+        if(words[nextIndex()]==matchingParens[word]){
             length++; break
         }else length+=phraseLength(nextIndex())
     

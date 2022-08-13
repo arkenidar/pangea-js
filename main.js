@@ -1,4 +1,4 @@
-var words="print 1 { print add 1 2 print 4 }".split(" ")
+var words=`print 1 { print add 1 2 print "ciao+Dario!" }`.split(" ")
 var defs={print:1, add:2}
 console.log(phraseLength(2))
 
@@ -6,21 +6,27 @@ function phraseLength(wordIndex){
     var length=1
     var word=words[wordIndex]
     function nextIndex(){ return wordIndex+length }
-    if(isNumeric(word)){}
+    
+    if(isNumber(word)||isString(word)){}
+
     else if(word=="{"){ while(true){
         if(words[nextIndex()]=="}"){
             length++; break
         }else length+=phraseLength(nextIndex())
-    } }else{
+    
+    } }else if(defs[word]!==undefined){
         var argumentLength=defs[word]
         for(var i=0; i<argumentLength; i++)
             length+=phraseLength(nextIndex())
-    }
+    
+    }else throw new Error("not handled: "+word)
     return length
 }
 
-function isNumeric(text){
+function isNumber(text){ return typeof parse(text)=="number" }
+function isString(text){ return typeof parse(text)=="string" }
+function parse(text){
     try{
-        return typeof JSON.parse(text)=="number"
-    }catch(exception){ return false }
+        return JSON.parse(text)
+    }catch(exception){ return null }
 }

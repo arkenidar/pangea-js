@@ -1,12 +1,15 @@
-var words=`print 1 { print add 1 2 print "ciao+Dario!" }`.split(" ")
+var code=`print 1 { print add 1 2 print "ciao+Dario!+1(+)2=3+using+((+))" }`
+
+var words=parseCode(code)
 var defs={print:1, add:2}
-console.log(phraseLength(2))
+
+console.log(phraseLength(2), words)
 
 function phraseLength(wordIndex){
     var length=1
     var word=words[wordIndex]
     function nextIndex(){ return wordIndex+length }
-    
+
     if(isNumber(word)||isString(word)){}
 
     else if(word=="{"){ while(true){
@@ -29,4 +32,21 @@ function parse(text){
     try{
         return JSON.parse(text)
     }catch(exception){ return null }
+}
+
+function parseCode(code){
+    words=code.split(" ")
+    words=words.map(handlePlus)    
+    return words
+}
+
+function handlePlus(word){
+    if(!isString(word))
+        return word
+    word=parse(word)
+    var parts=word.split("(+)")
+    parts=parts.map(part=>part.replace(/\+/g," "))
+    word=parts.join("+")
+    word=JSON.stringify(word)
+    return word
 }

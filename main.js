@@ -17,9 +17,13 @@ var words=parseCode(code)
 var defs=program.defs
 
 console.log("words:",words)
+var phraseLengths=[]
 console.log("phraseLength(wordIndex):",phraseLength(program.start))
+console.log(phraseLengths)
 
 function phraseLength(wordIndex){
+    if(phraseLengths[wordIndex]!==undefined)
+        return phraseLengths[wordIndex]
     var length=1
     var word=words[wordIndex]
     if(word===undefined) console.log("wrong wordIndex:", wordIndex)
@@ -31,6 +35,7 @@ function phraseLength(wordIndex){
     else if(["{","[","("].indexOf(word)!=-1){ while(true){
         var matchingParens={"{":"}","[":"]","(":")"}
         if(words[nextIndex()]==matchingParens[word]){
+            phraseLengths[nextIndex()]=1
             length++; break
         }else length+=phraseLength(nextIndex())
     
@@ -40,6 +45,8 @@ function phraseLength(wordIndex){
             length+=phraseLength(nextIndex())
     
     }else { console.log(word,"(exception)") }
+    
+    phraseLengths[wordIndex]=length
     return length
 }
 

@@ -129,21 +129,24 @@ exec(`times 3 print times_count 1`)
 exec(`times 2 times 3 ( print times_count 2 print times_count 1 )`)
 // 1 1 1 2 1 3 2 1 2 2 2 3
 
-if(false)exec(`
-print "fizz-buzz"
+exec(`( print "fizz-buzz+game"
 
 def multiple#2
-0 == ( arg 1 % arg 2 )
+== 0 modulus arg 1 arg 2
 
-set i 1
-while not i > 20 (
- print i
- i = ( 1 + i )
-)
+def i#0
+times_count 1
 
-times 20 ( )
+times 20 (
     
-`)
+    print
+    if multiple i 15 "fizz-buzz"
+    if multiple i 3 "fizz"
+    if multiple i 5 "buzz"
+    i
+)
+    
+)`)
 
 }
 
@@ -239,9 +242,15 @@ function multiply(params){
     return wordExec(params[0])*wordExec(params[1])
 }
 
+modulus.arity=2
+modulus.aliases=["%"]
+function modulus(params){
+    return wordExec(params[0])%wordExec(params[1])
+}
+
 //----------------------------------------------
 
-var namespaceFuncs = {print,add,times,def,dont,arg,if3,equal,multiply,times_count}
+var namespaceFuncs = {print,add,times,def,dont,arg,if3,equal,multiply,times_count,modulus}
 
 var namespace = {
     stack:[ {} ],

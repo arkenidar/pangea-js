@@ -124,7 +124,10 @@ function main(){
 // [begin]
 out("exec:",exec(arg_test2))
 
-exec(`times 3 print i`)
+exec(`times 3 print times_count 1`)
+
+exec(`times 2 times 3 ( print times_count 2 print times_count 1 )`)
+// 1 1 1 2 1 3 2 1 2 2 2 3
 
 if(false)exec(`
 print "fizz-buzz"
@@ -133,7 +136,7 @@ def multiple#2
 0 == ( arg 1 % arg 2 )
 
 set i 1
-while ! i > 20 (
+while not i > 20 (
  print i
  i = ( 1 + i )
 )
@@ -151,11 +154,27 @@ function times(params){
     var returned
     // TODO times/stop like while/break: break function called passed from here to block's namespace by reference
     var breakRef=[false]
+
+    var stack=namespace.times_stack
+    stack.push(1)
+
     for(var i=0; i<times; i++){
         if(breakRef[0]) break // TODO variable "by reference"
         returned=wordExec(params[1]) // exec block
+
+        stack[stack.length-1]++
     }
+
+    stack.pop()
+
     return returned
+}
+
+times_count.arity=1
+function times_count(params){
+    var depth=wordExec(params[0]) // starting from 1
+    var stack=namespace.times_stack
+    return stack[stack.length-depth]
 }
 
 if3.arity=3
@@ -222,10 +241,11 @@ function multiply(params){
 
 //----------------------------------------------
 
-var namespaceFuncs = {print,add,times,def,dont,arg,if3,equal,multiply}
+var namespaceFuncs = {print,add,times,def,dont,arg,if3,equal,multiply,times_count}
 
 var namespace = {
-    stack:[ {} ]
+    stack:[ {} ],
+    times_stack:[],
 }
 
 for(var id in namespaceFuncs) nameSpaceInit(id)

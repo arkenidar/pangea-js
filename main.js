@@ -137,12 +137,15 @@ def multiple#2
 def i#0
 times_count 1
 
+def multiple_of#1
+multiple i arg 1
+
 times 20 (
     
     print
-    if multiple i 15 "fizz-buzz"
-    if multiple i 3 "fizz"
-    if multiple i 5 "buzz"
+    if multiple_of 15 "fizz-buzz"
+    if multiple_of 3 "fizz"
+    if multiple_of 5 "buzz"
     i
 )
     

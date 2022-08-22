@@ -155,6 +155,10 @@ exec(`(
     print [ 11 22 33 ]
 )`)
 
+exec(`(
+    print { "a" 11 "b" 22 "c" 33 }
+)`)
+
 }
 
 //////////////////////////////////
@@ -311,6 +315,28 @@ function wordExec(wordIndex){
         while(words[wordIndex]!="]"){
             var element=wordExec(wordIndex)
             returned.push(element)
+            wordIndex+=phraseLength(wordIndex)
+        }
+        return returned
+    }
+
+    else
+
+    // object series, {} blocks
+    if(word=="{"){
+        var returned = {}
+        wordIndex++
+        var mode="key"
+        var key
+        while(words[wordIndex]!="}"){
+            var element=wordExec(wordIndex)
+            if( mode=="key" ){
+                key=element
+                mode="value"
+            }else if( mode=="value"){
+                returned[key]=element
+                mode="key"
+            }
             wordIndex+=phraseLength(wordIndex)
         }
         return returned

@@ -151,6 +151,10 @@ times 20 (
     
 )`)
 
+exec(`(
+    print [ 11 22 33 ]
+)`)
+
 }
 
 //////////////////////////////////
@@ -293,6 +297,20 @@ function wordExec(wordIndex){
             var result=wordExec(wordIndex)
             if(result!==undefined)
             returned=result
+            wordIndex+=phraseLength(wordIndex)
+        }
+        return returned
+    }
+
+    else
+
+    // array series, [] blocks
+    if(word=="["){
+        var returned = []
+        wordIndex++
+        while(words[wordIndex]!="]"){
+            var element=wordExec(wordIndex)
+            returned.push(element)
             wordIndex+=phraseLength(wordIndex)
         }
         return returned

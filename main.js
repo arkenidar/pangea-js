@@ -74,7 +74,7 @@ function exec(code){
     return returned
 }
 
-function main(){
+function main1(){
     var out=console.log
     code=`print "hello+world!"`
     exec(code)
@@ -161,6 +161,23 @@ exec(`(
 
 }
 
+function main2(){
+///exec("print ( 3 - 4 + 1 )")
+///exec("print ( 3 + -4 + 1 )")
+
+//exec("print ( + + 3 -4 1 )")
+
+//exec("print 3 squared")
+console.log(exec("print 4 squared"))
+}
+//[begin]
+//////////////////////////////////
+squared.operator="postfix"
+//squared.arity=0  // TODO needed?
+function squared(params){
+    var n=wordExec(params[0],true) // TODO params WIP
+    return n**2
+}
 //////////////////////////////////
 times.arity=2
 function times(params){
@@ -261,7 +278,7 @@ function modulus(params){
 
 //----------------------------------------------
 
-var namespaceFuncs = {print,add,times,def,dont,arg,if3,equal,multiply,times_count,modulus}
+var namespaceFuncs = {print,add,times,def,dont,arg,if3,equal,multiply,times_count,modulus,squared}
 
 var namespace = {
     stack:[ {} ],
@@ -272,8 +289,9 @@ for(var id in namespaceFuncs) nameSpaceInit(id)
 function nameSpaceInit(id){
     var func=namespaceFuncs[id]
     var arity=func.arity
+    var operator=func.operator
 
-    var entry={func,arity}
+    var entry={func,arity,operator}
     namespace[id]=entry
 
     if(func.aliases)
@@ -283,9 +301,27 @@ function nameSpaceInit(id){
 
 //////////////////////////////////
 
-function wordExec(wordIndex){
+function wordExec(wordIndex, skipOperator=false){
     var word=words[wordIndex]
     
+    function nextIndex(skipOperator=false){ return wordIndex + phraseLength(wordIndex,skipOperator) } // WIP useful?
+    // TODO WIP
+    //if()
+
+    // not prefix: postfix or infix
+    var nextWord=words[nextIndex(true)]
+    if(nextWord!==undefined && skipOperator==false){
+        // if next word is not prefix
+        var entry=namespace[nextWord]
+        if(entry && entry.operator=="postfix"){
+            return entry.func([wordIndex])
+        }
+        //length+=phraseLength( nextIndex() ) // WIP remove
+        
+        
+    }
+    
+
     // single value
     if(parse(word)!==undefined){
         return parse(word)
@@ -377,12 +413,16 @@ function wordExec(wordIndex){
 }
 ///////////////////////////////
 
-function phraseLength(wordIndex){
+function phraseLength(wordIndex, skipOperator=false){
+    if(skipOperator==false)
     if(phraseLengths[wordIndex]!==undefined)
         return phraseLengths[wordIndex]
     var length=1
     var word=words[wordIndex]
-    if(word===undefined) console.error("wrong wordIndex:", wordIndex)
+    if(word===undefined){
+        console.error("wrong wordIndex:", wordIndex)
+        //return 0 // TODO ???
+    }
 
     function nextIndex(){ return wordIndex+length }
     function wordArity(word){
@@ -427,6 +467,16 @@ function phraseLength(wordIndex){
         console.log(word,"(exception)")
     }
     
+    // not prefix: postfix or infix
+    var nextWord=words[nextIndex()]
+    if(nextWord!==undefined && skipOperator==false){
+        // if next word is not prefix
+        var entry=namespace[nextWord]
+        if(entry && entry.operator=="postfix")
+        length+=phraseLength( nextIndex() )
+    }
+
+    if(skipOperator==false)
     phraseLengths[wordIndex]=length
     return length
 }
@@ -456,4 +506,5 @@ function handlePlus(word){
     return word
 }
 
-main()
+//main1()
+main2()

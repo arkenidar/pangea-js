@@ -74,13 +74,21 @@ function exec(code){
 
 function main1(){
     var out=console.log
-    code=`print "hello+world!"`
-    exec(code)
 
-    exec("times 2 "+code)
-    out("out:",exec("add 1 2"))
+    code=`print "hello+world!"`
+    ///exec(code)
+
+    exec("2 times "+code)
+    //out("out:",exec("1 + 2")) // add 1 2
+
+    // add ( add 1.5 2 ) 3
+    var code1=`2 times ( print 1.5 + 2 + 3 print "ciao+Dario!+1(+)2=3+using+((+))" )`
     exec(code1)
 
+    exec(`( def times_test#1 ( arg 1 ) times print "*time*"
+    times_test 3 )`)
+    
+return
     if(false)
     exec(`(
         def func#0
@@ -190,9 +198,10 @@ function exponent(params){
     return n**exp
 }
 //////////////////////////////////
-times.arity=2
+times.operator="infix"
+times.arity=1
 function times(params){
-    var times=wordExec(params[0])
+    var times=wordExec(params[0], true)
     var returned
     // TODO times/stop like while/break: break function called passed from here to block's namespace by reference
     var breakRef=[false]
@@ -532,5 +541,5 @@ function handlePlus(word){
     return word
 }
 
-//main1()
-main2()
+main1()
+//main2()

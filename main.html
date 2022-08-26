@@ -5,5 +5,24 @@
 </head>
 <body>
 <script src="main.js"></script>
+<button onclick="list_words()">words</button><div id="words"></div>
+<script>
+var words_list=document.getElementById("words")
+function list_words(){
+    words_list.innerHTML="words_list<br>"
+    for(var index_iter=0; index_iter<words.length; index_iter++)
+        words_list.innerHTML+=`<span data-index="${index_iter}" onclick="word_click(event)">${words[index_iter]} </span>`
+}
+function word_click(event){
+    var target=event.target
+    var start=parseInt(target.dataset.index)
+    var length=phraseLengths[start]
+    var end=start+length-1
+    list_words()
+    for(var i=start; i<= end; i++){
+        document.querySelector(`[data-index="${i}"]`).style.backgroundColor='lightgrey'
+    }
+}
+</script>
 </body>
 </html>

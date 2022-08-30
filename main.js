@@ -235,11 +235,14 @@ function each(params){
     var returned
 
     var stack=namespace.each_stack
-    stack.push(1)
+    stack.push({stop:false})
 
     for(var [key, item] of Object.entries(iterable)){
 
-        stack[stack.length-1]={v:item,k:key}
+        // each_break
+        if(stack[stack.length-1].stop) break
+        
+        stack[stack.length-1].iter={v:item,k:key}
 
         returned=wordExec(params[1]) // exec block
 
@@ -262,7 +265,7 @@ function each_item(){
 }
 function each_item_gen(depth,attribute="v"){ // internal
     var stack=namespace.each_stack
-    return stack[stack.length-depth][attribute]
+    return stack[stack.length-depth].iter[attribute]
 }
 each_key_i.arity=1
 function each_key_i(params){
@@ -273,6 +276,12 @@ function each_key_i(params){
 each_key.arity=0
 function each_key(){
     return each_item_gen(1,"k")
+}
+
+each_break.arity=0
+function each_break(){
+    var stack=namespace.each_stack
+    stack[stack.length-1].stop=true
 }
 //////////////////////////////////
 if3.arity=3
@@ -326,10 +335,11 @@ function arg(params){
     return argument
 }
 
-equal.arity=2
+equal.operator="infix"
+equal.arity=1
 equal.aliases=["=="]
 function equal(params){
-    return wordExec(params[0])==wordExec(params[1])
+    return wordExec(params[0],true)==wordExec(params[1])
 }
 
 multiply.arity=2
@@ -346,7 +356,7 @@ function modulus(params){
 
 //----------------------------------------------
 
-var namespaceFuncs = {print,add,times,def,dont,arg,if3,equal,multiply,times_count,modulus,squared,exponent,each,each_item,each_item_i,each_key,each_key_i}
+var namespaceFuncs = {print,add,times,def,dont,arg,if3,equal,multiply,times_count,modulus,squared,exponent,each,each_item,each_item_i,each_key,each_key_i,each_break}
 
 var namespace = {
     stack:[ {} ],
@@ -593,5 +603,6 @@ function handlePlus(word){
 //main2()
 
 exec(`{ "one" 1 "two" 2 "three" 3 } each (
-     print each_key print each_item 
+    if each_item == 3 each_break
+    ( print each_key print each_item )
      )`)

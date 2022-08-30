@@ -237,9 +237,9 @@ function each(params){
     var stack=namespace.each_stack
     stack.push(1)
 
-    for(var item of iterable){
+    for(var [key, item] of Object.entries(iterable)){
 
-        stack[stack.length-1]=item
+        stack[stack.length-1]={v:item,k:key}
 
         returned=wordExec(params[1]) // exec block
 
@@ -260,9 +260,19 @@ each_item.arity=0
 function each_item(){
     return each_item_gen(1)
 }
-function each_item_gen(depth){ // internal
+function each_item_gen(depth,attribute="v"){ // internal
     var stack=namespace.each_stack
-    return stack[stack.length-depth]
+    return stack[stack.length-depth][attribute]
+}
+each_key_i.arity=1
+function each_key_i(params){
+    var depth=wordExec(params[0]) // starting from 1
+    return each_item_gen(depth,"k")
+}
+
+each_key.arity=0
+function each_key(){
+    return each_item_gen(1,"k")
 }
 //////////////////////////////////
 if3.arity=3
@@ -336,7 +346,7 @@ function modulus(params){
 
 //----------------------------------------------
 
-var namespaceFuncs = {print,add,times,def,dont,arg,if3,equal,multiply,times_count,modulus,squared,exponent,each,each_item,each_item_i}
+var namespaceFuncs = {print,add,times,def,dont,arg,if3,equal,multiply,times_count,modulus,squared,exponent,each,each_item,each_item_i,each_key,each_key_i}
 
 var namespace = {
     stack:[ {} ],
@@ -582,4 +592,6 @@ function handlePlus(word){
 //main1()
 //main2()
 
-exec(`[ "one" "two" "three" ] each print each_item`)
+exec(`{ "one" 1 "two" 2 "three" 3 } each (
+     print each_key print each_item 
+     )`)

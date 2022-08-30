@@ -227,7 +227,36 @@ function times_count(params){
     var stack=namespace.times_stack
     return stack[stack.length-depth]
 }
+//////////////////////////////////
+each.operator="infix"
+each.arity=1
+function each(params){
+    var iterable=wordExec(params[0], true)
+    var returned
 
+    var stack=namespace.each_stack
+    stack.push(1)
+
+    for(var item of iterable){
+
+        stack[stack.length-1]=item
+
+        returned=wordExec(params[1]) // exec block
+
+    }
+
+    stack.pop()
+
+    return returned
+}
+
+each_item.arity=1
+function each_item(params){
+    var depth=wordExec(params[0]) // starting from 1
+    var stack=namespace.each_stack
+    return stack[stack.length-depth]
+}
+//////////////////////////////////
 if3.arity=3
 if3.aliases=["if"]
 function if3(params){
@@ -299,11 +328,12 @@ function modulus(params){
 
 //----------------------------------------------
 
-var namespaceFuncs = {print,add,times,def,dont,arg,if3,equal,multiply,times_count,modulus,squared,exponent}
+var namespaceFuncs = {print,add,times,def,dont,arg,if3,equal,multiply,times_count,modulus,squared,exponent,each,each_item}
 
 var namespace = {
     stack:[ {} ],
     times_stack:[],
+    each_stack:[],
 }
 
 for(var id in namespaceFuncs) nameSpaceInit(id)
@@ -541,5 +571,7 @@ function handlePlus(word){
     return word
 }
 
-main1()
+//main1()
 //main2()
+
+exec(`[ "one" "two" "three" ] each print each_item 1`)

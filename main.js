@@ -250,9 +250,17 @@ function each(params){
     return returned
 }
 
-each_item.arity=1
-function each_item(params){
+each_item_i.arity=1
+function each_item_i(params){
     var depth=wordExec(params[0]) // starting from 1
+    return each_item_gen(depth)
+}
+
+each_item.arity=0
+function each_item(){
+    return each_item_gen(1)
+}
+function each_item_gen(depth){ // internal
     var stack=namespace.each_stack
     return stack[stack.length-depth]
 }
@@ -328,7 +336,7 @@ function modulus(params){
 
 //----------------------------------------------
 
-var namespaceFuncs = {print,add,times,def,dont,arg,if3,equal,multiply,times_count,modulus,squared,exponent,each,each_item}
+var namespaceFuncs = {print,add,times,def,dont,arg,if3,equal,multiply,times_count,modulus,squared,exponent,each,each_item,each_item_i}
 
 var namespace = {
     stack:[ {} ],
@@ -574,4 +582,4 @@ function handlePlus(word){
 //main1()
 //main2()
 
-exec(`[ "one" "two" "three" ] each print each_item 1`)
+exec(`[ "one" "two" "three" ] each print each_item`)

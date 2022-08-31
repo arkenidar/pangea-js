@@ -1,3 +1,4 @@
+/*
 var code1=`times 2 ( print add ( add 1.5 2 ) 3 print "ciao+Dario!+1(+)2=3+using+((+))" )`
 var defs1={print:1, add:2}
 var program1={code:code1,defs:defs1,start:2}
@@ -21,6 +22,7 @@ var program=program1
 var code=program.code
 var words=parseCode(code)
 var defs=program.defs
+*/
 
 //console.log("words:",words)
 var phraseLengths=[]
@@ -28,12 +30,15 @@ var phraseLengths=[]
 //console.log(phraseLengths)
 
 ///////////////////////////////
-
+var words=["("] // begin ( ... ) sequence
 function exec(code){
 
     var print=console.log // shorter
 
-    words=parseCode(code) // parse .sp code (spaced)
+    var previousLength=words.length
+    var parsedWords=parseCode(code) // parse .sp code (spaced)
+    // feature: word-code can grow with exec() calls (REPL, etc)
+    words=words.concat(parsedWords)
     print("words:",words)
 
     // pre-scan arities
@@ -49,7 +54,7 @@ function exec(code){
                 "word": word,
             }
 
-            namespace[id]=entry
+            namespace.arities[id]=entry
         }
     }
 
@@ -67,7 +72,7 @@ function exec(code){
     print("zipped:", zip_pairs(words,phraseLengths) )
 
     print("[begin]") // program start
-    var returned = wordExec(0)
+    var returned = wordExec(previousLength) // execute only the added code
     print("[end]")
     return returned
 }
@@ -359,6 +364,7 @@ function modulus(params){
 var namespaceFuncs = {print,add,times,def,dont,arg,if3,equal,multiply,times_count,modulus,squared,exponent,each,each_item,each_item_i,each_key,each_key_i,each_break}
 
 var namespace = {
+    arities:{},
     stack:[ {} ],
     times_stack:[],
     each_stack:[],
@@ -384,7 +390,7 @@ function wordExec(wordIndex, skipOperator=false){
     var word=words[wordIndex]
     
     if(word===undefined){
-        console.error("wrong wordIndex:", wordIndex)
+        console.error("(in wordExec) wrong wordIndex:", wordIndex)
         return
     }
 
@@ -425,7 +431,7 @@ function wordExec(wordIndex, skipOperator=false){
     if(word=="("){
         var returned
         wordIndex++
-        while(words[wordIndex]!=")"){
+        while(words[wordIndex]!=")" && words[wordIndex]!==undefined){
             var result=wordExec(wordIndex)
             if(result!==undefined)
             returned=result
@@ -512,7 +518,7 @@ function phraseLength(wordIndex, skipOperator=false){
     var length=1
     var word=words[wordIndex]
     if(word===undefined){
-        console.error("wrong wordIndex:", wordIndex)
+        console.error("(in phraseLength) wrong wordIndex:", wordIndex)
         return 0
     }
 
@@ -521,7 +527,7 @@ function phraseLength(wordIndex, skipOperator=false){
         
         if(word.indexOf("#")!=-1) return 0
 
-        var entry=namespace[word]
+        var entry=namespace[word] || namespace.arities[word]
         if(entry===undefined){
             console.error("word not in namespace:",word)
             return
@@ -537,6 +543,7 @@ function phraseLength(wordIndex, skipOperator=false){
     // series, () blocks, [] blocks, {} blocks
     if(["{","[","("].indexOf(word)!=-1){ while(true){
         var matchingParens={"{":"}","[":"]","(":")"}
+        if(words[nextIndex()]===undefined) break // close ( ... ) sequence at the end
         if(words[nextIndex()]==matchingParens[word]){
             phraseLengths[nextIndex()]=1
             length++; break
@@ -583,7 +590,7 @@ function parse(text){
 }
 
 function parseCode(code){
-    words=code.split(/\s+/)
+    var words=code.split(/\s+/) // local variable
     words=words.map(handlePlus)    
     return words
 }
@@ -602,7 +609,17 @@ function handlePlus(word){
 //main1()
 //main2()
 
+if(false)
 exec(`{ "one" 1 "two" 2 "three" 3 } each (
     if each_item == 3 each_break
     ( print each_key print each_item )
      )`)
+
+if(true){
+exec(`( def f1#1 print arg 1   f1 111 )`)
+exec(`f1 222`)
+}
+if(false){
+exec(`def ditto#1 ( print arg 1 print arg 1 )`)
+exec(`ditto "2+times"`)
+}

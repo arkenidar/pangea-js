@@ -359,9 +359,17 @@ function modulus(params){
     return wordExec(params[0])%wordExec(params[1])
 }
 
+// operator: greater. test: exec("3 > 1")
+greater.operator="infix" // not prefix
+greater.arity=1 // arity for infix (1, not 2)
+greater.aliases=[">"]
+function greater(params){
+    return wordExec(params[0],true)>wordExec(params[1]) // "skipOperator" because infix, not prefix
+}
+
 //----------------------------------------------
 
-var namespaceFuncs = {print,add,times,def,dont,arg,if3,equal,multiply,times_count,modulus,squared,exponent,each,each_item,each_item_i,each_key,each_key_i,each_break}
+var namespaceFuncs = {print,add,times,def,dont,arg,if3,equal,multiply,times_count,modulus,greater,squared,exponent,each,each_item,each_item_i,each_key,each_key_i,each_break}
 
 var namespace = {
     arities:{},

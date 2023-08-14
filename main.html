@@ -4,6 +4,14 @@
 <title>pangea.js main</title>
 </head>
 <body>
+
+<pre id="printOut"></pre>
+<script>
+function printToHTML(string){
+    document.getElementById("printOut").textContent += string
+}
+</script>
+
 <script src="main.js"></script>
 <button onclick="list_words()">words</button><div id="words"></div>
 <script>

@@ -322,6 +322,7 @@ print.arity=1
 function print(params){
     var out=wordExec(params[0])
     console.log(out)
+    if(typeof printToHTML=="function") printToHTML(out+"\n")
     return out
 }
 /*

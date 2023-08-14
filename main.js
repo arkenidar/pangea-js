@@ -663,3 +663,27 @@ exec(`( def factorial#1
   1
   ( arg 1 ) * factorial ( arg 1 ) - 1 
 print factorial 3 )`)
+
+//main1()
+
+exec(`( print "fizz-buzz+game"
+
+def multiple#2
+0 == ( ( arg 1 ) % ( arg 2 ) )
+
+def i#0
+times_count 1
+
+def multiple_of#1
+multiple i arg 1
+
+20 times (
+    
+    print
+    if multiple_of 15 "fizz-buzz"
+    if multiple_of  3 "fizz"
+    if multiple_of  5 "buzz"
+    i
+)
+    
+)`)

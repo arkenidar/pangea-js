@@ -324,14 +324,14 @@ function print(params){
     console.log(out)
     return out
 }
-
+/*
 add.operator="infix"
 add.arity=1
 add.aliases=["+"]
 function add(params){
     return wordExec(params[0],true)+wordExec(params[1])
 }
-
+*/
 arg.arity=1
 function arg(params){
     var index=wordExec(params[0])
@@ -340,6 +340,7 @@ function arg(params){
     return argument
 }
 
+/*
 equal.operator="infix"
 equal.arity=1
 equal.aliases=["=="]
@@ -352,6 +353,8 @@ multiply.aliases=["*"]
 function multiply(params){
     return wordExec(params[0])*wordExec(params[1])
 }
+*/
+
 /*
 modulus.arity=2
 modulus.aliases=["%"]
@@ -369,10 +372,19 @@ function greater(params){
 
 //----------------------------------------------
 
-var namespaceFuncs = {print,add,times,def,dont,arg,if3,equal,multiply,times_count, /* modulus,*/ greater,squared,exponent,each,each_item,each_item_i,each_key,each_key_i,each_break}
+var namespaceFuncs = {print, /* add, */ times,def,dont,arg,if3, /* equal, multiply, */ times_count, /* modulus,*/ greater,squared,exponent,each,each_item,each_item_i,each_key,each_key_i,each_break}
+
+binaryOperator("add","+",(a,b)=>a + b)
+binaryOperator("subtract","-",(a,b)=>a - b)
+binaryOperator("multiply","*",(a,b)=>a * b)
+
+binaryOperator("equal","==",(a,b)=>a == b)
 binaryOperator("lesser","<",(a,b)=>a < b)
 binaryOperator("lesserOrEqual","<=",(a,b)=>a <= b)
+
 binaryOperator("modulus","%",(a,b)=>a % b)
+
+
 function binaryOperator(name,symbol,lambda){
     operatorFactory.name=name
     operatorFactory.operator="infix"
@@ -645,3 +657,9 @@ if(false){
 exec(`def ditto#1 ( print arg 1 print arg 1 )`)
 exec(`ditto "2+times"`)
 }
+
+exec(`( def factorial#1
+ if ( arg 1 ) == 0
+  1
+  ( arg 1 ) * factorial ( arg 1 ) - 1 
+print factorial 3 )`)

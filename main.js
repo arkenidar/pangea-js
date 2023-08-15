@@ -203,6 +203,16 @@ function exponent(params){
     return n**exp
 }
 //////////////////////////////////
+// what when condition else-what
+when.operator="infix"
+when.arity=2
+function when(params){
+    var condition=wordExec(params[1])
+    return condition ?
+    /*what*/ wordExec(params[0], true)
+    : /* else-what */ wordExec(params[2])
+}
+//////////////////////////////////
 times.operator="infix"
 times.arity=1
 function times(params){
@@ -373,7 +383,7 @@ function greater(params){
 
 //----------------------------------------------
 
-var namespaceFuncs = {print, /* add, */ times,def,dont,arg,if3, /* equal, multiply, */ times_count, /* modulus,*/ greater,squared,exponent,each,each_item,each_item_i,each_key,each_key_i,each_break}
+var namespaceFuncs = {print, when, /* add, */ times,def,dont,arg,if3, /* equal, multiply, */ times_count, /* modulus,*/ greater,squared,exponent,each,each_item,each_item_i,each_key,each_key_i,each_break}
 
 binaryOperator("add","+",(a,b)=>a + b)
 binaryOperator("subtract","-",(a,b)=>a - b)
@@ -442,7 +452,7 @@ function wordExec(wordIndex, skipOperator=false){
         }
 
         if(entry && entry.operator=="infix"){
-            var arity=1 // arity is 1 for infix operators
+            var arity=entry.arity
             var params=[wordIndex] // 1st operand (implicit), added to params
             wordIndex+=phraseLength(wordIndex,true) // skip that operand
             wordIndex+=1 // for operator word, skip that operator
@@ -681,9 +691,9 @@ multiple i arg 1
 20 times (
     
     print
-    if multiple_of 15 "fizz-buzz"
-    if multiple_of  3 "fizz"
-    if multiple_of  5 "buzz"
+    "fizz-buzz" when multiple_of 15
+    "fizz" when multiple_of 3
+    "buzz" when multiple_of 5
     i
 )
     

@@ -44,8 +44,14 @@ function exec(code){
     // pre-scan arities
     // composite names (id#arity)
     for(var word of words){
-        if(word.indexOf("#")!=-1){
-            var parts=word.split("#")
+        if(word.indexOf("#")!=-1 && 
+            /* "word" should not be a JSON string:
+            valid, process it: function_name#arity
+            not valid, ignore it, skip it: "JSON+string+containing+#+hash-mark"
+            */
+            typeof JSON.parse(word) != "string" ){
+            
+                var parts=word.split("#")
             var id=parts[0]
             var arity=parseInt(parts[1])
 

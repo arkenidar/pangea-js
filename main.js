@@ -49,7 +49,7 @@ function exec(code){
             valid, process it: function_name#arity
             not valid, ignore it, skip it: "JSON+string+containing+#+hash-mark"
             */
-            typeof JSON.parse(word) != "string" ){
+            typeof parse(word) != "string" ){
             
                 var parts=word.split("#")
             var id=parts[0]

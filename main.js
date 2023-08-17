@@ -334,6 +334,9 @@ function def(params){
 dont.arity=1
 function dont(params){}
 
+pass.arity=0
+function pass(params){}
+
 print.arity=1
 function print(params){
     var out=wordExec(params[0])
@@ -389,7 +392,7 @@ function greater(params){
 
 //----------------------------------------------
 
-var namespaceFuncs = {print, when, /* add, */ times,def,dont,arg,if3, /* equal, multiply, */ times_count, /* modulus,*/ greater,squared,exponent,each,each_item,each_item_i,each_key,each_key_i,each_break}
+var namespaceFuncs = {print, when, /* add, */ times,def,arg,if3,dont,pass, /* equal, multiply, */ times_count, /* modulus,*/ greater,squared,exponent,each,each_item,each_item_i,each_key,each_key_i,each_break}
 
 binaryOperator("add","+",(a,b)=>a + b)
 binaryOperator("subtract","-",(a,b)=>a - b)

@@ -312,6 +312,13 @@ function if3(params){
     return wordExec(params[condition?1:2])
 }
 //////////////////////////////////
+unless.operator="infix"
+unless.arity=1
+function unless(params){
+    var condition=wordExec(params[1])
+    if(condition==false) wordExec(params[0],true)
+}
+//////////////////////////////////
 def.arity=2 // def#2
 function def(params){
     var word = words[ params[0] ].split("#")
@@ -392,7 +399,7 @@ function greater(params){
 
 //----------------------------------------------
 
-var namespaceFuncs = {print, when, /* add, */ times,def,arg,if3,dont,pass, /* equal, multiply, */ times_count, /* modulus,*/ greater,squared,exponent,each,each_item,each_item_i,each_key,each_key_i,each_break}
+var namespaceFuncs = {print, when, /* add, */ times,def,arg,if3,unless,dont,pass, /* equal, multiply, */ times_count, /* modulus,*/ greater,squared,exponent,each,each_item,each_item_i,each_key,each_key_i,each_break}
 
 binaryOperator("add","+",(a,b)=>a + b)
 binaryOperator("subtract","-",(a,b)=>a - b)

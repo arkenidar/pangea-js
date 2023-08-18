@@ -339,6 +339,7 @@ function def(params){
 }
     
 dont.arity=1
+dont.aliases=["comment"]
 function dont(params){}
 
 pass.arity=0

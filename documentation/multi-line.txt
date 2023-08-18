@@ -1,0 +1,42 @@
+multi-line (string or comment)
+
+print
+"
+line1
+line2
+line3
+"
+
+print "line1\nline2\nline3"
+
+
+print
+"
+line1
+line2 space
+line3 +plus
+"
+
+print "line1\nline2+space\nline3+++plus"
+
+
+print
+"
+line1
+line2 space
+line3 +plus
+""
+line4 double-quote
+"
+
+print "line1\nline2+space\nline3+++plus\n\"\nline4+double-quote"
+
+
+NOTE: "comment" is an alias of "dont"
+
+comment "one+line+comment"
+
+comment
+"
+(potentially) multi-line comment
+"

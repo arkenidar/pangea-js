@@ -1,5 +1,7 @@
-multi-line (string or comment)
+multi-line texts
+(uses: strings or comments or other uses)
 
+INPUT 1
 print
 "
 line1
@@ -7,9 +9,11 @@ line2
 line3
 "
 
-print "line1\nline2\nline3"
+OUTPUT 1
+print
+"line1\nline2\nline3\n"
 
-
+INPUT 2
 print
 "
 line1
@@ -17,9 +21,11 @@ line2 space
 line3 +plus
 "
 
-print "line1\nline2+space\nline3+++plus"
+OUTPUT 2
+print
+"line1\nline2+space\nline3+++plus\n"
 
-
+INPUT 3
 print
 "
 line1
@@ -29,8 +35,12 @@ line3 +plus
 line4 double-quote
 "
 
-print "line1\nline2+space\nline3+++plus\n\"\nline4+double-quote"
+OUTPUT 3
+print
+"line1\nline2+space\nline3+++plus\n\"\nline4+double-quote\n"
 
+
+ABOUT USING COMMENTS
 
 NOTE: "comment" is an alias of "dont"
 

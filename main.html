@@ -1,50 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
- <title>pangea.js main</title>
- <meta name="viewport" content="width=device-width, initial-scale=1">
- <meta charset="utf-8">
+    <title>pangea.js main</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
 </head>
+
 <body>
 
-<!-- OUT-PUT -->
-<pre id="printOut"></pre>
-<script>
-function printToHTML(string){
-    document.getElementById("printOut").textContent += string
-}
-</script>
+    <!-- OUT-PUT -->
+    <pre id="printOut"></pre>
+    <script>
+        function printToHTML(string) {
+            document.getElementById("printOut").textContent += string
+        }
+    </script>
 
-<!-- IN-PUT -->
-<div style="display: flex;">
- <button onclick=' exec( "( "+ document.getElementById("executeThis").innerText +" )" )'>execute</button>
- <pre id="executeThis" contenteditable="true" style="flex-grow:1; border:1px solid black; padding: 1em;"></pre>
-</div>
-<br>
+    <!-- IN-PUT -->
+    <div style="display: flex;">
+        <button onclick=' exec( "( "+ document.getElementById("executeThis").innerText +" )" )'>execute</button>
+        <pre id="executeThis" contenteditable="true" style="flex-grow:1; border:1px solid black; padding: 1em;"></pre>
+    </div>
+    <br>
 
-<!-- main script -->
-<script src="main.js"></script>
+    <!-- main script -->
+    <script src="main.js"></script>
 
-<!-- WORDS DISPLAY -->
-<button onclick="list_words()">words</button><div id="words"></div>
-<script>
-var words_list=document.getElementById("words")
-function list_words(){
-    words_list.innerHTML="words_list<br>"
-    for(var index_iter=0; index_iter<words.length; index_iter++)
-        words_list.innerHTML+=`<span data-index="${index_iter}" onclick="word_click(event)">${words[index_iter]} </span>`
-}
-function word_click(event){
-    var target=event.target
-    var start=parseInt(target.dataset.index)
-    var length=phraseLengths[start]
-    var end=start+length-1
-    list_words()
-    for(var i=start; i<= end; i++){
-        document.querySelector(`[data-index="${i}"]`).style.backgroundColor='lightgrey'
-    }
-}
-</script>
+    <!-- WORDS DISPLAY -->
+    <button onclick="list_words()">words</button>
+    <div id="words"></div>
+    <script>
+        var words_list = document.getElementById("words")
+        function list_words() {
+            words_list.innerHTML = "words_list<br>"
+            for (var index_iter = 0; index_iter < words.length; index_iter++)
+                words_list.innerHTML += `<span data-index="${index_iter}" onclick="word_click(event)">${words[index_iter]} </span>`
+        }
+        function word_click(event) {
+            var target = event.target
+            var start = parseInt(target.dataset.index)
+            var length = phraseLengths[start]
+            var end = start + length - 1
+            list_words()
+            for (var i = start; i <= end; i++) {
+                document.querySelector(`[data-index="${i}"]`).style.backgroundColor = 'lightgrey'
+            }
+        }
+    </script>
+
+    <hr>
+    <script src="show-source.js" data-href="main.html"></script>
+    <script src="show-source.js" data-href="main.js"></script>
 
 </body>
+
 </html>

@@ -1,0 +1,6 @@
+def factorial#1
+if3 ( ( arg 1 ) > 1 )
+( ( arg 1 ) *
+ ( factorial ( ( arg 1 ) - 1 ) ) )
+1
+print factorial 4

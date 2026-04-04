@@ -168,6 +168,44 @@
         border-radius: 3px;
       }
 
+      .phrase-box {
+        border-radius: 2px;
+      }
+
+      .phrase-tone-0 {
+        background: rgba(51, 65, 85, 0.08);
+        box-shadow: inset 0 -2px 0 rgba(51, 65, 85, 0.62);
+      }
+
+      .phrase-tone-1 {
+        background: rgba(2, 132, 199, 0.1);
+        box-shadow: inset 0 -2px 0 rgba(2, 132, 199, 0.66);
+      }
+
+      .phrase-tail-marker {
+        position: relative;
+      }
+
+      .phrase-tail-marker::after {
+        content: "";
+        position: absolute;
+        right: -2px;
+        top: 0.1em;
+        bottom: 0.08em;
+        width: 3px;
+        border-radius: 1px;
+        opacity: 0.9;
+        pointer-events: none;
+      }
+
+      .phrase-tail-0::after {
+        background: rgba(51, 65, 85, 0.85);
+      }
+
+      .phrase-tail-1::after {
+        background: rgba(2, 132, 199, 0.88);
+      }
+
       .tok-literal {
         color: #7c3aed;
       }
@@ -465,10 +503,35 @@ i
         }
 
         var partGroupSteps = new Array(parts.length);
+        var partPhraseBand = new Array(parts.length);
+        var partPhraseTailBand = new Array(parts.length);
         var tokenWords = tokenIndices.map(function (partIndex) {
           return parts[partIndex].raw;
         });
         var phraseCache = [];
+
+        // Alternate subtle phrase bands so adjacent word-phrases are easier to scan.
+        var phraseCursor = 0;
+        var phraseBand = 0;
+        while (phraseCursor < tokenIndices.length) {
+          var phraseLen = editorPhraseLength(tokenWords, phraseCursor, phraseCache, true);
+          if (!phraseLen || phraseLen < 1) phraseLen = 1;
+          var phraseEnd = Math.min(phraseCursor + phraseLen - 1, tokenIndices.length - 1);
+          if (phraseLen >= 2) {
+            // Long phrases become visually noisy when fully decorated;
+            // keep decoration on the phrase head so boundaries stay readable.
+            var decoratedEnd = phraseEnd;
+            if (phraseLen > 8) {
+              decoratedEnd = Math.min(phraseCursor + 3, phraseEnd);
+              partPhraseTailBand[tokenIndices[phraseEnd]] = phraseBand;
+            }
+            for (var phraseToken = phraseCursor; phraseToken <= decoratedEnd; phraseToken++) {
+              partPhraseBand[tokenIndices[phraseToken]] = phraseBand;
+            }
+            phraseBand = 1 - phraseBand;
+          }
+          phraseCursor = phraseEnd + 1;
+        }
 
         function phraseStartAt(tokenEndIndex) {
           if (tokenEndIndex < 0) return 0;
@@ -580,6 +643,7 @@ i
 
         var html = [];
         var activeGroupSteps = new Set();
+        var activePhraseBand = null;
 
         function nextTokenPartIndex(fromIndex) {
           for (var n = fromIndex + 1; n < parts.length; n++) {
@@ -613,13 +677,45 @@ i
             }
           }
 
-          html.push(
-            tokenSpan(
-              part.raw,
-              part.className,
-              activeToken(part.start, part.end, caret, text.length),
-            ),
+          var myPhraseBand =
+            partPhraseBand[j] === undefined || partPhraseBand[j] === null
+              ? null
+              : partPhraseBand[j];
+          if (myPhraseBand !== null && activePhraseBand !== myPhraseBand) {
+            html.push('<span class="phrase-box phrase-tone-' + myPhraseBand + '">');
+            activePhraseBand = myPhraseBand;
+          }
+
+          var myPhraseTailBand =
+            partPhraseTailBand[j] === undefined || partPhraseTailBand[j] === null
+              ? null
+              : partPhraseTailBand[j];
+
+          var tokenHtml = tokenSpan(
+            part.raw,
+            part.className,
+            activeToken(part.start, part.end, caret, text.length),
           );
+          if (myPhraseTailBand !== null) {
+            tokenHtml =
+              '<span class="phrase-tail-marker phrase-tail-' +
+              myPhraseTailBand +
+              '">' +
+              tokenHtml +
+              "</span>";
+          }
+          html.push(tokenHtml);
+
+          var nextPhraseBand =
+            nextTokenIndex == -1 ||
+            partPhraseBand[nextTokenIndex] === undefined ||
+            partPhraseBand[nextTokenIndex] === null
+              ? null
+              : partPhraseBand[nextTokenIndex];
+          if (activePhraseBand !== null && nextPhraseBand !== activePhraseBand) {
+            html.push("</span>");
+            activePhraseBand = null;
+          }
 
           // Close groups that end
           var stepsToClose = [];
@@ -635,6 +731,9 @@ i
         }
 
         // Close remaining groups
+        if (activePhraseBand !== null) {
+          html.push("</span>");
+        }
         for (var step of activeGroupSteps) {
           html.push("</span>");
         }

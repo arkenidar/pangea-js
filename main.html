@@ -246,17 +246,11 @@ i
     <div class="panel">
       <div class="row">
         <button onclick="runReplCode()">execute</button>
-        <button onclick="setDraftFromRuntime()">
-          load runtime into editor
-        </button>
+        <button onclick="setDraftFromRuntime()">load runtime into editor</button>
       </div>
       <div id="editorShell" class="editor-shell">
         <pre id="editorOverlay" class="editor-overlay" aria-hidden="true"></pre>
-        <textarea
-          id="executeThis"
-          class="editor-input"
-          spellcheck="false"
-        ></textarea>
+        <textarea id="executeThis" class="editor-input" spellcheck="false"></textarea>
       </div>
       <div class="status">
         <span id="editorStatus">ready</span>
@@ -286,10 +280,7 @@ i
       var CLOSING = Object.values(MATCHING);
 
       function escapeHtml(text) {
-        return String(text)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;");
+        return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       }
 
       function sourceWord(word) {
@@ -315,16 +306,14 @@ i
       }
 
       function normalizeLookupWord(word) {
-        if (typeof normalizeWordToken == "function")
-          return normalizeWordToken(word);
+        if (typeof normalizeWordToken == "function") return normalizeWordToken(word);
         return word;
       }
 
       function tokenClass(token) {
         if (typeof parse(token) != "undefined") return "tok-literal";
         var normalized = normalizeLookupWord(token);
-        var id =
-          normalized.indexOf("#") != -1 ? normalized.split("#")[0] : normalized;
+        var id = normalized.indexOf("#") != -1 ? normalized.split("#")[0] : normalized;
         var entry = namespace[id];
         if (entry && entry.operator) return "tok-operator";
         if (entry) return "tok-call";
@@ -346,15 +335,7 @@ i
             attrText += " " + key + '="' + escapeHtml(attrs[key]) + '"';
           }
         }
-        return (
-          '<span class="' +
-          classes +
-          '"' +
-          attrText +
-          ">" +
-          escapeHtml(raw) +
-          "</span>"
-        );
+        return '<span class="' + classes + '"' + attrText + ">" + escapeHtml(raw) + "</span>";
       }
 
       function tokenMeta(rawToken) {
@@ -372,8 +353,7 @@ i
           return { kind: "literal" };
         }
         var normalized = normalizeLookupWord(rawToken);
-        var id =
-          normalized.indexOf("#") != -1 ? normalized.split("#")[0] : normalized;
+        var id = normalized.indexOf("#") != -1 ? normalized.split("#")[0] : normalized;
         var entry = namespace[id];
         if (entry && entry.operator == "infix")
           return { kind: "infix", chainable: entry.chainable === true };
@@ -439,8 +419,7 @@ i
 
           if (OPENING.indexOf(ch) != -1 || CLOSING.indexOf(ch) != -1) {
             var bracketDepth = depth;
-            if (CLOSING.indexOf(ch) != -1)
-              bracketDepth = Math.max(depth - 1, 0);
+            if (CLOSING.indexOf(ch) != -1) bracketDepth = Math.max(depth - 1, 0);
             tokenCount++;
             parts.push({
               kind: "token",
@@ -516,12 +495,7 @@ i
           // before `result` is a function whose phrase ends at result, include it.
           while (result > 0) {
             var prevStart = result - 1;
-            var prevLen = editorPhraseLength(
-              tokenWords,
-              prevStart,
-              phraseCache,
-              true,
-            );
+            var prevLen = editorPhraseLength(tokenWords, prevStart, phraseCache, true);
             if (prevStart + prevLen - 1 === tokenEndIndex) {
               result = prevStart;
             } else {
@@ -534,14 +508,7 @@ i
         // Detect only chainable infix chains and annotate them.
         for (var t = 0; t < tokenIndices.length; t++) {
           var opPart = parts[tokenIndices[t]];
-          if (
-            !(
-              opPart.meta &&
-              opPart.meta.kind == "infix" &&
-              opPart.meta.chainable
-            )
-          )
-            continue;
+          if (!(opPart.meta && opPart.meta.kind == "infix" && opPart.meta.chainable)) continue;
           if (t == 0 || t + 1 >= tokenIndices.length) continue;
 
           var chainStartToken = phraseStartAt(t - 1);
@@ -563,12 +530,7 @@ i
             if (cursor + 1 >= tokenIndices.length) break;
 
             var rightStartToken = cursor + 1;
-            var rightLen = editorPhraseLength(
-              tokenWords,
-              rightStartToken,
-              phraseCache,
-              true,
-            );
+            var rightLen = editorPhraseLength(tokenWords, rightStartToken, phraseCache, true);
             var rightEndToken = rightStartToken + rightLen - 1;
 
             chainOps.push({
@@ -597,8 +559,7 @@ i
             var step = Math.min(stepIndex + 1, 6);
             var operatorToken = chainOps[stepIndex].operatorToken;
             var operatorPartIndex = tokenIndices[operatorToken];
-            parts[operatorPartIndex].className +=
-              " tok-chain-op tok-chain-step-" + step;
+            parts[operatorPartIndex].className += " tok-chain-op tok-chain-step-" + step;
 
             // Group for this step spans from chain start to current right operand.
             var stepEndToken = chainOps[stepIndex].rightEndToken;
@@ -608,8 +569,7 @@ i
               tokenPos++
             ) {
               var groupedPartIndex = tokenIndices[tokenPos];
-              if (!partGroupSteps[groupedPartIndex])
-                partGroupSteps[groupedPartIndex] = [];
+              if (!partGroupSteps[groupedPartIndex]) partGroupSteps[groupedPartIndex] = [];
               partGroupSteps[groupedPartIndex].push(step);
             }
           }
@@ -635,9 +595,7 @@ i
             continue;
           }
 
-          var myGroups = partGroupSteps[j]
-            ? partGroupSteps[j].slice().sort((a, b) => a - b)
-            : [];
+          var myGroups = partGroupSteps[j] ? partGroupSteps[j].slice().sort((a, b) => a - b) : [];
           var nextTokenIndex = nextTokenPartIndex(j);
           var nextGroups =
             nextTokenIndex == -1
@@ -695,8 +653,7 @@ i
               return { ok: false, message: "unbalanced delimiters" };
           }
         }
-        if (stack.length)
-          return { ok: false, message: "missing closing delimiter" };
+        if (stack.length) return { ok: false, message: "missing closing delimiter" };
         return { ok: true, message: "balanced" };
       }
 
@@ -740,12 +697,7 @@ i
           var atomicArgs = entry && entry.atomicArgs === true;
           if (arity !== undefined) {
             for (var i = 0; i < arity; i++) {
-              length += editorPhraseLength(
-                tokens,
-                index + length,
-                cache,
-                atomicArgs,
-              );
+              length += editorPhraseLength(tokens, index + length, cache, atomicArgs);
             }
           }
         }
@@ -753,10 +705,7 @@ i
         if (!skipOperator) {
           var maybeOperator = normalizeLookupWord(tokens[index + length]);
           var opEntry = namespace[maybeOperator];
-          if (
-            opEntry &&
-            (opEntry.operator == "postfix" || opEntry.operator == "infix")
-          ) {
+          if (opEntry && (opEntry.operator == "postfix" || opEntry.operator == "infix")) {
             length += editorPhraseLength(tokens, index + length, cache, false);
           }
         }
@@ -771,11 +720,7 @@ i
       }
 
       function isFullyWrapped(expression) {
-        if (
-          !expression ||
-          expression[0] != "(" ||
-          expression[expression.length - 1] != ")"
-        )
+        if (!expression || expression[0] != "(" || expression[expression.length - 1] != ")")
           return false;
         var depth = 0;
         for (var i = 0; i < expression.length; i++) {
@@ -796,9 +741,7 @@ i
       }
 
       function renderFunctionArgument(tokens, argIndex, cache, atomicArg) {
-        return trimRedundantParens(
-          renderParsedPhrase(tokens, argIndex, cache, atomicArg === true),
-        );
+        return trimRedundantParens(renderParsedPhrase(tokens, argIndex, cache, atomicArg === true));
       }
 
       function renderParsedPhrase(tokens, index, cache, skipOperator) {
@@ -835,15 +778,8 @@ i
             var argIndex = index + 1;
             var atomicArgs = entry && entry.atomicArgs === true;
             for (var i = 0; i < arity; i++) {
-              args.push(
-                renderFunctionArgument(tokens, argIndex, cache, atomicArgs),
-              );
-              argIndex += editorPhraseLength(
-                tokens,
-                argIndex,
-                cache,
-                atomicArgs,
-              );
+              args.push(renderFunctionArgument(tokens, argIndex, cache, atomicArgs));
+              argIndex += editorPhraseLength(tokens, argIndex, cache, atomicArgs);
             }
             baseRendered = displayToken(word) + "(" + args.join(", ") + ")";
           } else {
@@ -861,13 +797,7 @@ i
         if (!operatorEntry || !operatorEntry.operator) return baseRendered;
 
         if (operatorEntry.operator == "postfix") {
-          return (
-            "(" +
-            trimRedundantParens(baseRendered) +
-            " " +
-            displayToken(operatorWord) +
-            ")"
-          );
+          return "(" + trimRedundantParens(baseRendered) + " " + displayToken(operatorWord) + ")";
         }
 
         if (operatorEntry.operator == "infix") {
@@ -893,8 +823,7 @@ i
 
           while (true) {
             var scanOperatorWord = tokens[scanIndex];
-            var scanOperatorEntry =
-              namespace[normalizeLookupWord(scanOperatorWord)];
+            var scanOperatorEntry = namespace[normalizeLookupWord(scanOperatorWord)];
             if (
               !(
                 scanOperatorEntry &&
@@ -909,15 +838,8 @@ i
               renderParsedPhrase(tokens, rightIndex, cache, true),
             );
             leftRendered =
-              "(" +
-              leftRendered +
-              " " +
-              displayToken(scanOperatorWord) +
-              " " +
-              rightRendered +
-              ")";
-            scanIndex =
-              rightIndex + editorPhraseLength(tokens, rightIndex, cache, true);
+              "(" + leftRendered + " " + displayToken(scanOperatorWord) + " " + rightRendered + ")";
+            scanIndex = rightIndex + editorPhraseLength(tokens, rightIndex, cache, true);
           }
 
           return leftRendered;
@@ -941,9 +863,7 @@ i
         )
           return null;
 
-        var current = trimRedundantParens(
-          renderParsedPhrase(tokens, startIndex, cache, true),
-        );
+        var current = trimRedundantParens(renderParsedPhrase(tokens, startIndex, cache, true));
         var steps = [];
         var scanIndex = operatorIndex;
 
@@ -961,15 +881,11 @@ i
             break;
 
           var rightIndex = scanIndex + 1;
-          var right = trimRedundantParens(
-            renderParsedPhrase(tokens, rightIndex, cache, true),
-          );
-          current =
-            "(" + current + " " + displayToken(scanWord) + " " + right + ")";
+          var right = trimRedundantParens(renderParsedPhrase(tokens, rightIndex, cache, true));
+          current = "(" + current + " " + displayToken(scanWord) + " " + right + ")";
           steps.push(current);
 
-          scanIndex =
-            rightIndex + editorPhraseLength(tokens, rightIndex, cache, true);
+          scanIndex = rightIndex + editorPhraseLength(tokens, rightIndex, cache, true);
         }
 
         if (!steps.length) return null;
@@ -1018,8 +934,7 @@ i
 
         var chain = findStrongestChain(tokens, cache);
         if (chain) {
-          editorAssocHint.textContent =
-            "left-to-right chain: " + chain.steps.join(" -> ");
+          editorAssocHint.textContent = "left-to-right chain: " + chain.steps.join(" -> ");
         } else {
           editorAssocHint.textContent = "";
         }
@@ -1037,9 +952,7 @@ i
 
       function updateDraftFromEditor() {
         renderEditorDecorations();
-        setStatus(
-          checkBalance(executeThis.value).ok ? "editing" : "delimiter issue",
-        );
+        setStatus(checkBalance(executeThis.value).ok ? "editing" : "delimiter issue");
       }
 
       function debouncedDraftUpdate() {
@@ -1056,11 +969,7 @@ i
         var selected = value.slice(start, end);
         event.preventDefault();
         executeThis.value =
-          value.slice(0, start) +
-          event.key +
-          selected +
-          pairs[event.key] +
-          value.slice(end);
+          value.slice(0, start) + event.key + selected + pairs[event.key] + value.slice(end);
         var caret = selected.length ? end + 2 : start + 1;
         executeThis.selectionStart = executeThis.selectionEnd = caret;
         updateDraftFromEditor();

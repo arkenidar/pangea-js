@@ -80,10 +80,7 @@ function exec(code) {
   print("[begin]"); // program start
   var returned = wordExec(previousLength); // execute only the added code
   print("[end]");
-  if (
-    typeof window != "undefined" &&
-    typeof window.onPangeaStateChange == "function"
-  ) {
+  if (typeof window != "undefined" && typeof window.onPangeaStateChange == "function") {
     try {
       window.onPangeaStateChange({
         words: words,
@@ -227,9 +224,7 @@ when.operator = "infix";
 when.arity = 2;
 function when(params) {
   var condition = wordExec(params[1], true);
-  return condition
-    ? /*what*/ wordExec(params[0], true)
-    : /* else-what */ wordExec(params[2]);
+  return condition ? /*what*/ wordExec(params[0], true) : /* else-what */ wordExec(params[2]);
 }
 //////////////////////////////////
 times.operator = "infix";
@@ -546,13 +541,7 @@ function wordExec(wordIndex, skipOperator = false) {
         var nextOperatorIndex = scanIndex;
         var nextWord = words[nextOperatorIndex];
         var nextEntry = namespace[nextWord];
-        if (
-          !(
-            nextEntry &&
-            nextEntry.operator == "infix" &&
-            nextEntry.chainable === true
-          )
-        ) {
+        if (!(nextEntry && nextEntry.operator == "infix" && nextEntry.chainable === true)) {
           words.length = tempWordsStart;
           phraseLengths.length = Math.min(phraseLengths.length, tempWordsStart);
           return result;
@@ -686,8 +675,7 @@ function phraseLength(wordIndex, skipOperator = false) {
     var argumentLength = wordArity(word);
     var wordEntry = namespace[word] || namespace.arities[word];
     var atomicArgs = wordEntry && wordEntry.atomicArgs === true;
-    for (var i = 0; i < argumentLength; i++)
-      length += phraseLength(nextIndex(), atomicArgs);
+    for (var i = 0; i < argumentLength; i++) length += phraseLength(nextIndex(), atomicArgs);
   } else {
     console.log(word, "(exception)");
   }

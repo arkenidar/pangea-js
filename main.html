@@ -96,6 +96,9 @@
         margin-top: 0.35rem;
         color: #4b5563;
         font-size: 0.95em;
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+        word-break: normal;
       }
 
       .parse-assoc {
@@ -1014,11 +1017,18 @@ i
         return best;
       }
 
+      function formatHintHtml(text) {
+        return escapeHtml(text)
+          .replace(/ ; then /g, "<wbr> ; then ")
+          .replace(/, /g, ",&nbsp;")
+          .replace(/ -> /g, " <wbr>-> ");
+      }
+
       function updateParseHint(text) {
         var trimmed = text.trim();
         if (!trimmed.length) {
-          editorParseHint.textContent = "";
-          editorAssocHint.textContent = "";
+          editorParseHint.innerHTML = "";
+          editorAssocHint.innerHTML = "";
           return;
         }
 
@@ -1026,8 +1036,8 @@ i
           return token.length;
         });
         if (!tokens.length) {
-          editorParseHint.textContent = "";
-          editorAssocHint.textContent = "";
+          editorParseHint.innerHTML = "";
+          editorAssocHint.innerHTML = "";
           return;
         }
 
@@ -1042,13 +1052,15 @@ i
         }
 
         var hint = "parsed as: " + phrases.join(" ; then ");
-        editorParseHint.textContent = hint;
+        editorParseHint.innerHTML = formatHintHtml(hint);
 
         var chain = findStrongestChain(tokens, cache);
         if (chain) {
-          editorAssocHint.textContent = "left-to-right chain: " + chain.steps.join(" -> ");
+          editorAssocHint.innerHTML = formatHintHtml(
+            "left-to-right chain: " + chain.steps.join(" -> "),
+          );
         } else {
-          editorAssocHint.textContent = "";
+          editorAssocHint.innerHTML = "";
         }
       }
 

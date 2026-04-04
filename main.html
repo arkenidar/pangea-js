@@ -110,7 +110,7 @@
 
       .tok-chain-op {
         position: relative;
-        padding: 3px 2px 0;
+        padding: 0;
       }
 
       .tok-chain-step-1 {
@@ -983,8 +983,54 @@ i
           var value = executeThis.value;
           executeThis.value = value.slice(0, start) + "  " + value.slice(end);
           executeThis.selectionStart = executeThis.selectionEnd = start + 2;
-          updateDraftFromEditor();
+          setTimeout(updateDraftFromEditor, 0);
           return;
+        }
+        // Smart bracket deletion: Backspace before a bracket deletes the bracket
+        // and its matching pair. Use setTimeout to defer re-render until DOM is stable.
+        if (event.key == "Backspace") {
+          var pairs = { "(": ")", "[": "]", "{": "}" };
+          var closers = { ")": "(", "]": "[", "}": "{" };
+          var start = executeThis.selectionStart;
+          var end = executeThis.selectionEnd;
+          if (start === end && start > 0) {
+            var value = executeThis.value;
+            var char = value[start - 1]; // The char we're about to delete
+            // Case 1: Immediately adjacent pair (auto-paired)
+            if (pairs[char] && value[start] === pairs[char]) {
+              event.preventDefault();
+              executeThis.value = value.slice(0, start - 1) + value.slice(start + 1);
+              executeThis.selectionStart = executeThis.selectionEnd = start - 1;
+              setTimeout(updateDraftFromEditor, 0);
+              return;
+            }
+            // Case 2: Bracket with no immediate pair — find matching bracket
+            if (pairs[char]) {
+              var closer = pairs[char];
+              var depth = 0;
+              var matchIdx = -1;
+              for (var i = start - 1; i < value.length; i++) {
+                if (value[i] === char) depth++;
+                if (value[i] === closer) {
+                  depth--;
+                  if (depth === 0) {
+                    matchIdx = i;
+                    break;
+                  }
+                }
+              }
+              if (matchIdx > -1) {
+                event.preventDefault();
+                executeThis.value =
+                  value.slice(0, start - 1) +
+                  value.slice(start, matchIdx) +
+                  value.slice(matchIdx + 1);
+                executeThis.selectionStart = executeThis.selectionEnd = start - 1;
+                setTimeout(updateDraftFromEditor, 0);
+                return;
+              }
+            }
+          }
         }
         applyAutoPair(event);
       }

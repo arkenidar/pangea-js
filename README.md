@@ -60,3 +60,14 @@ TypescriptStructure was aimed at representing intermediate programs as list-of-l
 This is a single-author project for now, but ideas, critiques, and experiments are welcome.
 
 If you use it for learning, feel free to fork it and adapt it.
+
+## Editor sync regression check
+
+When changing editor CSS or token decorations, quickly verify overlay and caret alignment:
+
+1. Load this snippet in the editor:
+	`def factorial#1\nif ( arg 1 ) == 0 1 ( arg 1 ) * factorial ( arg 1 ) - 1\n\nprint factorial 5`
+2. Place caret just after `(` in `factorial ( arg 1 ) - 1` and press `Backspace`.
+3. Confirm both parentheses are removed.
+4. Confirm visible text matches typed text at the caret position (no 1-char visual offset).
+5. Confirm status remains `balanced` when delimiters are balanced.

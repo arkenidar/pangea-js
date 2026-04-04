@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pangea JS Documentation</title>
+    <style>
+      :root {
+        --bg: #f5f7fb;
+        --panel: #ffffff;
+        --text: #1f2937;
+        --muted: #4b5563;
+        --line: #d1d5db;
+        --accent: #0f766e;
+        --accent-2: #1d4ed8;
+        --code: #111827;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Iosevka", "Fira Code", "JetBrains Mono", monospace;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 10% -10%, #dbeafe 0%, transparent 40%),
+          radial-gradient(circle at 90% 10%, #dcfce7 0%, transparent 35%),
+          var(--bg);
+        line-height: 1.5;
+      }
+
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 2rem 1rem 3rem;
+      }
+
+      header {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 1.25rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0 0 0.6rem;
+        line-height: 1.2;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+      }
+      h2 {
+        font-size: 1.25rem;
+        margin-top: 1.4rem;
+      }
+      h3 {
+        font-size: 1rem;
+        margin-top: 1rem;
+      }
+
+      p {
+        margin: 0.45rem 0;
+      }
+
+      .lead {
+        color: var(--muted);
+        max-width: 70ch;
+      }
+
+      .grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        margin-top: 1rem;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 1rem;
+      }
+
+      .card h3 {
+        color: var(--accent);
+      }
+
+      .section {
+        margin-top: 1rem;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 1rem;
+      }
+
+      ul {
+        margin: 0.5rem 0 0.8rem 1.2rem;
+        padding: 0;
+      }
+
+      code,
+      pre {
+        font-family: "Iosevka", "Fira Code", "JetBrains Mono", monospace;
+        color: var(--code);
+      }
+
+      pre {
+        margin: 0.5rem 0 0;
+        padding: 0.8rem;
+        border-radius: 10px;
+        background: #eef2ff;
+        border: 1px solid #c7d2fe;
+        overflow: auto;
+        white-space: pre-wrap;
+      }
+
+      .badge {
+        display: inline-block;
+        font-size: 0.85rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 999px;
+        border: 1px solid #a7f3d0;
+        background: #ecfdf5;
+        color: #065f46;
+        margin-right: 0.35rem;
+      }
+
+      .timeline {
+        border-left: 3px solid #bfdbfe;
+        padding-left: 0.8rem;
+        margin-top: 0.6rem;
+      }
+
+      .timeline p {
+        margin: 0.4rem 0;
+      }
+
+      .footer-note {
+        margin-top: 1rem;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      a {
+        color: var(--accent-2);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <header>
+        <h1>Pangea JS Documentation</h1>
+        <p class="lead">
+          Pangea is a toy language project built for learning, experimentation,
+          and language design. It combines a text-based runtime with ongoing
+          attempts to make program structure more graphical and easier to
+          inspect.
+        </p>
+        <p>
+          <span class="badge">Toy language</span>
+          <span class="badge">Single author</span>
+          <span class="badge">Experimental UI</span>
+        </p>
+      </header>
+
+      <section class="section">
+        <h2>Project Story</h2>
+        <p>
+          The original plan was a DHTML-based graphical interface. That goal led
+          to a series of translations and rewrites:
+        </p>
+        <div class="timeline">
+          <p><strong>LuaPang</strong> -> first implementation direction.</p>
+          <p>
+            <strong>TypescriptPang</strong> -> translation and expansion for
+            browser-oriented work.
+          </p>
+          <p>
+            <strong>TypescriptStructure</strong> -> rewrite focused on
+            list-of-lists structures for intermediate programs.
+          </p>
+        </div>
+        <p>
+          The most ambitious part, a full program-tree graphical interface with
+          two-way transformation between text and graphics, is still open. It
+          requires more design novelty than has felt practical or fun so far.
+        </p>
+      </section>
+
+      <div class="grid">
+        <section class="card">
+          <h3>Core Intent</h3>
+          <ul>
+            <li>Build a language that is interesting to explore.</li>
+            <li>Use execution structure as a learning aid.</li>
+            <li>
+              Experiment with graphical editing without giving up source code.
+            </li>
+          </ul>
+        </section>
+
+        <section class="card">
+          <h3>What Exists Today</h3>
+          <ul>
+            <li>
+              Browser-based editor and runtime in <code>main.html</code> and
+              <code>main.js</code>.
+            </li>
+            <li>Interactive execution with live visual parse hints.</li>
+            <li>Examples such as factorial and fizz-buzz.</li>
+          </ul>
+        </section>
+
+        <section class="card">
+          <h3>Open Challenges</h3>
+          <ul>
+            <li>
+              Stable two-way mapping between source text and graphical program
+              trees.
+            </li>
+            <li>
+              Usable intermediate structure representation during execution.
+            </li>
+            <li>
+              Keeping the project readable and enjoyable while still exploring
+              unusual ideas.
+            </li>
+          </ul>
+        </section>
+      </div>
+
+      <section class="section">
+        <h2>Execution Model (High Level)</h2>
+        <p>
+          Programs are tokenized and evaluated with a phrase-length strategy
+          that supports prefix forms, infix operators, and block-style
+          constructs. The current editor also experiments with visual hints that
+          show how infix chains are grouped.
+        </p>
+        <h3>Example</h3>
+        <pre>print "111" + 1 + 2 + 5</pre>
+        <p>
+          In the current interface, this can be displayed as a left-to-right
+          chain with progressive grouping hints.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>Repository Layout</h2>
+        <ul>
+          <li><code>main.html</code>: interactive editor and UI rendering.</li>
+          <li><code>main.js</code>: runtime, operators, and parser helpers.</li>
+          <li>
+            <code>factorial.sp</code>, <code>fizz-buzz.sp</code>: language
+            scripts.
+          </li>
+          <li><code>examples/</code>: additional samples.</li>
+          <li>
+            <code>documentation/</code>: older project notes and reference
+            material.
+          </li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <h2>Roadmap Ideas</h2>
+        <ul>
+          <li>
+            Formalize a structure IR suitable for both execution and
+            visualization.
+          </li>
+          <li>
+            Prototype a node-based tree editor synchronized with source code.
+          </li>
+          <li>Improve diagnostics and explainability for beginners.</li>
+        </ul>
+        <p class="footer-note">
+          This project is intentionally experimental. The goal is not production
+          stability, but insight, iteration, and learning through design
+          constraints.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

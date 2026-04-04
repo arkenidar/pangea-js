@@ -1,0 +1,62 @@
+# Pangea JS
+
+Pangea is a toy language project for learning, experimentation, and language design.
+
+It explores a compact, polish-notation-inspired syntax, a small browser-based runtime, and the longer-term idea of a more graphical programming experience.
+
+## Why this project exists
+
+The project began with a simple ambition: make programming structure easier to see.
+
+The longer-term goal is a graphical program editor where:
+
+- Source code and graphical structure can both be first-class.
+- Programs can move in both directions between text and visual form.
+- Intermediate program structures can be represented clearly during execution.
+
+For now, source code is still central, but the project keeps moving toward a stronger visual model.
+
+## Current state
+
+- Runtime and editor prototype in JavaScript and HTML.
+- Live browser-based code editing and execution.
+- Experimental visual hints for parsing and infix associativity.
+- Early structural ideas influenced by list-of-lists intermediate representations.
+
+## Project files
+
+- `main.html`: browser UI/editor.
+- `main.js`: language runtime and operators.
+- `factorial.sp`, `fizz-buzz.sp`: simple language examples.
+- `examples/`: extra samples.
+- `documentation/`: historical project notes.
+
+## Quick start
+
+Serve this folder with a static web server, then open `main.html`.
+
+Example using VS Code Live Server:
+
+1. Open the project folder.
+2. Start Live Server on `main.html`.
+3. Type code in the editor and click `execute`.
+
+## Design principles
+
+- Keep it playful: this is a toy language, not a product.
+- Prefer readability and learning value over feature count.
+- Explore structural ideas even when they are still incomplete.
+
+## Background
+
+This repository followed an evolution path:
+
+- LuaPang -> TypescriptPang -> TypescriptStructure
+
+TypescriptStructure was aimed at representing intermediate programs as list-of-lists derived from polish-notation source code. The full program-tree graphical editor is still an open design problem rather than a finished feature.
+
+## Contributing
+
+This is a single-author project for now, but ideas, critiques, and experiments are welcome.
+
+If you use it for learning, feel free to fork it and adapt it.

@@ -493,10 +493,27 @@ i
 
         function phraseStartAt(tokenEndIndex) {
           if (tokenEndIndex < 0) return 0;
-          // Walk backward one call-boundary at a time: if the token immediately
-          // before `result` is a function whose phrase ends at tokenEndIndex,
-          // extend the chain start to include it.
+          // If the last token of the left operand is a closing bracket, jump
+          // directly to the matching opener first, then continue walking back.
+          var closers = { ")": "(", "]": "[", "}": "{" };
           var result = tokenEndIndex;
+          var endTok = tokenWords[result];
+          if (closers[endTok] !== undefined) {
+            var opener = closers[endTok];
+            var depth = 1;
+            for (var i = result - 1; i >= 0; i--) {
+              if (tokenWords[i] === endTok) depth++;
+              else if (tokenWords[i] === opener) {
+                depth--;
+                if (depth === 0) {
+                  result = i;
+                  break;
+                }
+              }
+            }
+          }
+          // Walk backward one call-boundary at a time: if the token immediately
+          // before `result` is a function whose phrase ends at result, include it.
           while (result > 0) {
             var prevStart = result - 1;
             var prevLen = editorPhraseLength(

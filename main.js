@@ -80,6 +80,17 @@ function exec(code) {
     print("[begin]") // program start
     var returned = wordExec(previousLength) // execute only the added code
     print("[end]")
+    if (typeof window != "undefined" && typeof window.onPangeaStateChange == "function") {
+        try {
+            window.onPangeaStateChange({
+                words: words,
+                phraseLengths: phraseLengths,
+                previousLength: previousLength,
+            })
+        } catch (error) {
+            console.error("onPangeaStateChange error:", error)
+        }
+    }
     return returned
 }
 
@@ -203,9 +214,10 @@ function squared(params) {
 exponent.operator = "infix"
 exponent.arity = 1
 exponent.aliases = ["**"]
+exponent.chainable = true
 function exponent(params) {
     var n = wordExec(params[0], true)
-    var exp = wordExec(params[1])
+    var exp = wordExec(params[1], true)
     return n ** exp
 }
 //////////////////////////////////
@@ -213,7 +225,7 @@ function exponent(params) {
 when.operator = "infix"
 when.arity = 2
 function when(params) {
-    var condition = wordExec(params[1])
+    var condition = wordExec(params[1], true)
     return condition ?
     /*what*/ wordExec(params[0], true)
         : /* else-what */ wordExec(params[2])
@@ -232,7 +244,7 @@ function times(params) {
 
     for (var i = 0; i < times; i++) {
         if (breakRef[0]) break // TODO variable "by reference"
-        returned = wordExec(params[1]) // exec block
+        returned = wordExec(params[1]) // exec block, keep full phrase semantics
 
         stack[stack.length - 1]++
     }
@@ -243,8 +255,9 @@ function times(params) {
 }
 
 times_count.arity = 1
+times_count.atomicArgs = true
 function times_count(params) {
-    var depth = wordExec(params[0]) // starting from 1
+    var depth = wordExec(params[0], true) // starting from 1
     var stack = namespace.times_stack
     return stack[stack.length - depth]
 }
@@ -315,7 +328,7 @@ function if3(params) {
 unless.operator = "infix"
 unless.arity = 1
 function unless(params) {
-    var condition = wordExec(params[1])
+    var condition = wordExec(params[1], true)
     if (condition == false) wordExec(params[0], true)
 }
 //////////////////////////////////
@@ -394,8 +407,9 @@ function modulus(params){
 greater.operator = "infix" // not prefix
 greater.arity = 1 // arity for infix (1, not 2)
 greater.aliases = [">"]
+greater.chainable = true
 function greater(params) {
-    return wordExec(params[0], true) > wordExec(params[1]) // "skipOperator" because infix, not prefix
+    return wordExec(params[0], true) > wordExec(params[1], true) // "skipOperator" because infix, not prefix
 }
 
 //----------------------------------------------
@@ -418,8 +432,9 @@ function binaryOperator(name, symbol, lambda) {
     operatorFactory.operator = "infix"
     operatorFactory.arity = 1
     operatorFactory.aliases = [symbol]
+    operatorFactory.chainable = true
     function operatorFactory(params) {
-        return lambda(wordExec(params[0], true), wordExec(params[1]))
+        return lambda(wordExec(params[0], true), wordExec(params[1], true))
     }
     namespaceFuncs[name] = operatorFactory
     return operatorFactory
@@ -437,8 +452,10 @@ function nameSpaceInit(id) {
     var func = namespaceFuncs[id]
     var arity = func.arity
     var operator = func.operator
+    var chainable = func.chainable
+    var atomicArgs = func.atomicArgs
 
-    var entry = { func, arity, operator }
+    var entry = { func, arity, operator, chainable, atomicArgs }
     namespace[id] = entry
 
     if (func.aliases)
@@ -458,6 +475,11 @@ function wordExec(wordIndex, skipOperator = false) {
 
     function nextIndex(skipOperator = false) { return wordIndex + phraseLength(wordIndex, skipOperator) }
 
+    function valueToWord(value) {
+        if (value === undefined) return "null"
+        return JSON.stringify(value)
+    }
+
     // if not prefix: postfix or infix
     var nextWord = words[nextIndex(true)]
     if (nextWord !== undefined && skipOperator == false) {
@@ -469,15 +491,57 @@ function wordExec(wordIndex, skipOperator = false) {
         }
 
         if (entry && entry.operator == "infix") {
-            var arity = entry.arity
-            var params = [wordIndex] // 1st operand (implicit), added to params
-            wordIndex += phraseLength(wordIndex, true) // skip that operand
-            wordIndex += 1 // for operator word, skip that operator
-            for (var i = 0; i < arity; i++) {
-                params.push(wordIndex) // other operands (explicit), add them (general case, here arity is fixed to 1)
-                wordIndex += phraseLength(wordIndex)
+            var tempWordsStart = words.length
+            var operatorIndex = nextIndex(true)
+            var leftIndex = wordIndex
+            var result
+
+            while (true) {
+                var operatorWord = words[operatorIndex]
+                var operatorEntry = namespace[operatorWord]
+                if (!(operatorEntry && operatorEntry.operator == "infix")) break
+
+                var params = [leftIndex]
+                var rightIndex = operatorIndex + 1
+                var scanIndex = rightIndex
+                for (var i = 0; i < operatorEntry.arity; i++) {
+                    params.push(scanIndex)
+                    scanIndex += phraseLength(scanIndex, true)
+                }
+
+                result = operatorEntry.func(params)
+
+                if (operatorEntry.arity != 1) {
+                    words.length = tempWordsStart
+                    phraseLengths.length = Math.min(phraseLengths.length, tempWordsStart)
+                    return result
+                }
+
+                // Only explicitly chainable infix operators participate in left-fold chains.
+                if (operatorEntry.chainable !== true) {
+                    words.length = tempWordsStart
+                    phraseLengths.length = Math.min(phraseLengths.length, tempWordsStart)
+                    return result
+                }
+
+                var nextOperatorIndex = scanIndex
+                var nextWord = words[nextOperatorIndex]
+                var nextEntry = namespace[nextWord]
+                if (!(nextEntry && nextEntry.operator == "infix" && nextEntry.chainable === true)) {
+                    words.length = tempWordsStart
+                    phraseLengths.length = Math.min(phraseLengths.length, tempWordsStart)
+                    return result
+                }
+
+                leftIndex = words.length
+                words.push(valueToWord(result))
+                phraseLengths[leftIndex] = 1
+                operatorIndex = nextOperatorIndex
             }
-            return entry.func(params)
+
+            words.length = tempWordsStart
+            phraseLengths.length = Math.min(phraseLengths.length, tempWordsStart)
+            return result
         }
     }
 
@@ -557,11 +621,12 @@ function wordExec(wordIndex, skipOperator = false) {
                     if (typeof current == "object") {
                         var arity = current.arity
                         var func = current.func
+                        var atomicArgs = current.atomicArgs === true
                         var params = []
                         wordIndex += 1
                         for (var i = 0; i < arity; i++) {
                             params.push(wordIndex)
-                            wordIndex += phraseLength(wordIndex)
+                            wordIndex += phraseLength(wordIndex, atomicArgs)
                         }
 
                         return func(params)
@@ -619,8 +684,10 @@ function phraseLength(wordIndex, skipOperator = false) {
             // nested
             if (wordArity(word) !== undefined) {
                 var argumentLength = wordArity(word)
+                    var wordEntry = namespace[word] || namespace.arities[word]
+                    var atomicArgs = wordEntry && wordEntry.atomicArgs === true
                 for (var i = 0; i < argumentLength; i++)
-                    length += phraseLength(nextIndex())
+                        length += phraseLength(nextIndex(), atomicArgs)
 
             }
 
@@ -654,7 +721,28 @@ function parse(text) {
 function parseCode(code) {
     var words = code.split(/\s+/) // local variable
     words = words.map(handlePlus)
+    words = words.map(normalizeWordToken)
     return words
+}
+
+function normalizeWordToken(word) {
+    if (typeof word != "string") return word
+    if (typeof parse(word) != "undefined") return word
+    if (word.indexOf("-") == -1) return word
+    if (word == "-") return word
+
+    function normalizeIdentifier(id) {
+        if (!/^[A-Za-z_][A-Za-z0-9_-]*$/.test(id)) return id
+        return id.replace(/-/g, "_")
+    }
+
+    if (word.indexOf("#") != -1) {
+        var parts = word.split("#")
+        parts[0] = normalizeIdentifier(parts[0])
+        return parts.join("#")
+    }
+
+    return normalizeIdentifier(word)
 }
 
 function handlePlus(word) {

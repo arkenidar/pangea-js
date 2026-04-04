@@ -110,25 +110,26 @@
 
       .tok-chain-op {
         position: relative;
+        padding: 3px 2px 0;
       }
 
       .tok-chain-step-1 {
-        box-shadow: inset 0 1px 0 rgba(220, 38, 38, 0.85);
+        box-shadow: inset 0 2px 0 rgba(220, 38, 38, 0.72);
       }
       .tok-chain-step-2 {
-        box-shadow: inset 0 1px 0 rgba(234, 88, 12, 0.85);
+        box-shadow: inset 0 2px 0 rgba(234, 88, 12, 0.72);
       }
       .tok-chain-step-3 {
-        box-shadow: inset 0 1px 0 rgba(202, 138, 4, 0.85);
+        box-shadow: inset 0 2px 0 rgba(202, 138, 4, 0.72);
       }
       .tok-chain-step-4 {
-        box-shadow: inset 0 1px 0 rgba(101, 163, 13, 0.85);
+        box-shadow: inset 0 2px 0 rgba(101, 163, 13, 0.72);
       }
       .tok-chain-step-5 {
-        box-shadow: inset 0 1px 0 rgba(8, 145, 178, 0.85);
+        box-shadow: inset 0 2px 0 rgba(8, 145, 178, 0.72);
       }
       .tok-chain-step-6 {
-        box-shadow: inset 0 1px 0 rgba(37, 99, 235, 0.85);
+        box-shadow: inset 0 2px 0 rgba(37, 99, 235, 0.72);
       }
 
       /* Visual group boxes for chain steps */
@@ -492,11 +493,25 @@ i
 
         function phraseStartAt(tokenEndIndex) {
           if (tokenEndIndex < 0) return 0;
-          for (var start = tokenEndIndex; start >= 0; start--) {
-            var len = editorPhraseLength(tokenWords, start, phraseCache, true);
-            if (start + len - 1 == tokenEndIndex) return start;
+          // Walk backward one call-boundary at a time: if the token immediately
+          // before `result` is a function whose phrase ends at tokenEndIndex,
+          // extend the chain start to include it.
+          var result = tokenEndIndex;
+          while (result > 0) {
+            var prevStart = result - 1;
+            var prevLen = editorPhraseLength(
+              tokenWords,
+              prevStart,
+              phraseCache,
+              true,
+            );
+            if (prevStart + prevLen - 1 === tokenEndIndex) {
+              result = prevStart;
+            } else {
+              break;
+            }
           }
-          return tokenEndIndex;
+          return result;
         }
 
         // Detect only chainable infix chains and annotate them.

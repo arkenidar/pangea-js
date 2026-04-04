@@ -173,37 +173,41 @@
       }
 
       .phrase-tone-0 {
-        background: rgba(51, 65, 85, 0.08);
-        box-shadow: inset 0 -2px 0 rgba(51, 65, 85, 0.62);
+        box-shadow: none;
       }
 
       .phrase-tone-1 {
-        background: rgba(2, 132, 199, 0.1);
-        box-shadow: inset 0 -2px 0 rgba(2, 132, 199, 0.66);
+        box-shadow: none;
       }
 
       .phrase-tail-marker {
+        display: inline-block;
+        vertical-align: baseline;
         position: relative;
+        border-radius: 1px;
       }
 
       .phrase-tail-marker::after {
         content: "";
         position: absolute;
         right: -2px;
-        top: 0.1em;
-        bottom: 0.08em;
-        width: 3px;
-        border-radius: 1px;
+        top: 0.82em;
+        width: 4px;
+        height: 4px;
+        border-radius: 999px;
+        background: var(--phrase-tail-color, rgba(51, 65, 85, 0.85));
         opacity: 0.9;
         pointer-events: none;
       }
 
-      .phrase-tail-0::after {
-        background: rgba(51, 65, 85, 0.85);
+      .phrase-tail-0 {
+        --phrase-tail-color: rgba(51, 65, 85, 0.9);
+        box-shadow: none;
       }
 
-      .phrase-tail-1::after {
-        background: rgba(2, 132, 199, 0.88);
+      .phrase-tail-1 {
+        --phrase-tail-color: rgba(2, 132, 199, 0.92);
+        box-shadow: none;
       }
 
       .tok-literal {
@@ -211,6 +215,10 @@
       }
 
       .tok-bracket {
+        font-weight: 700;
+      }
+
+      .def-sig {
         font-weight: 700;
       }
 
@@ -505,32 +513,74 @@ i
         var partGroupSteps = new Array(parts.length);
         var partPhraseBand = new Array(parts.length);
         var partPhraseTailBand = new Array(parts.length);
+        var partDefSig = new Array(parts.length);
         var tokenWords = tokenIndices.map(function (partIndex) {
           return parts[partIndex].raw;
         });
         var phraseCache = [];
 
-        // Alternate subtle phrase bands so adjacent word-phrases are easier to scan.
-        var phraseCursor = 0;
-        var phraseBand = 0;
-        while (phraseCursor < tokenIndices.length) {
-          var phraseLen = editorPhraseLength(tokenWords, phraseCursor, phraseCache, true);
-          if (!phraseLen || phraseLen < 1) phraseLen = 1;
-          var phraseEnd = Math.min(phraseCursor + phraseLen - 1, tokenIndices.length - 1);
-          if (phraseLen >= 2) {
-            // Long phrases become visually noisy when fully decorated;
-            // keep decoration on the phrase head so boundaries stay readable.
-            var decoratedEnd = phraseEnd;
-            if (phraseLen > 8) {
-              decoratedEnd = Math.min(phraseCursor + 3, phraseEnd);
-              partPhraseTailBand[tokenIndices[phraseEnd]] = phraseBand;
+        function previousPhraseStart(tokenEndIndex) {
+          if (tokenEndIndex < 0) return 0;
+          var closers = { ")": "(", "]": "[", "}": "{" };
+          var result = tokenEndIndex;
+          var endTok = tokenWords[result];
+          if (closers[endTok] !== undefined) {
+            var opener = closers[endTok];
+            var depth = 1;
+            for (var i = result - 1; i >= 0; i--) {
+              if (tokenWords[i] === endTok) depth++;
+              else if (tokenWords[i] === opener) {
+                depth--;
+                if (depth === 0) {
+                  result = i;
+                  break;
+                }
+              }
             }
-            for (var phraseToken = phraseCursor; phraseToken <= decoratedEnd; phraseToken++) {
-              partPhraseBand[tokenIndices[phraseToken]] = phraseBand;
-            }
-            phraseBand = 1 - phraseBand;
           }
-          phraseCursor = phraseEnd + 1;
+          while (result > 0) {
+            var prevStart = result - 1;
+            var prevLen = editorPhraseLength(tokenWords, prevStart, phraseCache, true);
+            if (prevStart + prevLen - 1 === tokenEndIndex) {
+              result = prevStart;
+            } else {
+              break;
+            }
+          }
+          return result;
+        }
+
+        var phraseBand = 0;
+        function decorateRange(start, end, withTailTick) {
+          if (start < 0 || end < start || end >= tokenIndices.length) return;
+          for (var phraseToken = start; phraseToken <= end; phraseToken++) {
+            partPhraseBand[tokenIndices[phraseToken]] = phraseBand;
+          }
+          if (withTailTick === true) {
+            partPhraseTailBand[tokenIndices[end]] = phraseBand;
+          }
+          phraseBand = 1 - phraseBand;
+        }
+
+        // Decorate full `def` phrase and tick its end (signature + body).
+        for (var d = 0; d < tokenWords.length; d++) {
+          if (normalizeLookupWord(tokenWords[d]) !== "def") continue;
+          var defLen = editorPhraseLength(tokenWords, d, phraseCache, true);
+          if (!defLen || defLen < 1) defLen = 1;
+          var defEnd = Math.min(d + defLen - 1, tokenWords.length - 1);
+          decorateRange(d, defEnd, true);
+          partDefSig[tokenIndices[d]] = true;
+          if (d + 1 < tokenWords.length) partDefSig[tokenIndices[d + 1]] = true;
+        }
+
+        // Decorate phrase immediately before flow-style operators.
+        for (var o = 0; o < tokenWords.length; o++) {
+          var op = normalizeLookupWord(tokenWords[o]);
+          if (!(op === "times" || op === "when" || op === "unless")) continue;
+          if (o - 1 < 0) continue;
+          var beforeEnd = o - 1;
+          var beforeStart = previousPhraseStart(beforeEnd);
+          decorateRange(beforeStart, beforeEnd, false);
         }
 
         function phraseStartAt(tokenEndIndex) {
@@ -693,7 +743,7 @@ i
 
           var tokenHtml = tokenSpan(
             part.raw,
-            part.className,
+            part.className + (partDefSig[j] ? " def-sig" : ""),
             activeToken(part.start, part.end, caret, text.length),
           );
           if (myPhraseTailBand !== null) {

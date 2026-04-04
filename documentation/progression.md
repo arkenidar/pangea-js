@@ -90,3 +90,97 @@ Notes
 
 - Graphical program-tree editing and robust two-way text/graphics transformation are still open design goals.
 - Next journal entries should be appended below with a new date header.
+
+### 2026-04-04 (times chaining fix)
+
+Summary
+
+- Fixed regression where nested `times` expressions behaved inconsistently after infix left-to-right changes.
+- Restricted runtime infix left-fold chaining to explicitly chainable operators only.
+- Kept `times` as infix but non-chainable, preserving loop/block semantics.
+- Aligned editor parse/chain hints with runtime so non-chainable operators are not shown as arithmetic chains.
+
+Implementation notes
+
+- In `main.js`, introduced `chainable` metadata for infix operators.
+- Set binary math/comparison operators and selected infix operators (for example `+`, `-`, `*`, `%`, `==`, `<`, `<=`, `>`, `**`) as chainable.
+- Updated infix folding in `wordExec` to continue only when current and next infix operators are chainable.
+- Restored `times` block execution to full phrase mode to avoid eager truncation of nested loop bodies.
+- In `main.html`, chain highlighting and left-to-right chain hinting now require `entry.chainable === true`.
+
+Validation cases
+
+- `2 times 2 times print times_count 1` -> output `1 2 1 2`
+- `2 times ( 2 times print times_count 1 )` -> output `1 2 1 2`
+- `3 times ( 2 times print times_count 2 )` -> output `1 1 2 2 3 3`
+
+Files touched in this entry
+
+- main.js
+- main.html
+
+### 2026-04-04 (atomicArgs for times_count)
+
+Summary
+
+- Fixed `times_count N + times_count M` incorrectly parsing as `times_count(N + times_count M)`.
+- Added `atomicArgs` flag to `times_count` so its argument is a single atomic token, not a full phrase.
+
+Implementation notes
+
+- In `main.js`, added `atomicArgs = true` to `times_count`; body evaluates arg with `skipOperator=true`.
+- Updated `phraseLength` and `wordExec` to respect `atomicArgs` when scanning arguments.
+- In `main.html`, `editorWordArity` / `editorPhraseLength` also respect `atomicArgs`.
+
+Validation cases
+
+- `3 times 2 times print times_count 2 + times_count 1` -> output `1,1 1,2 2,1 2,2 3,1 3,2`
+
+Files touched in this entry
+
+- main.js
+- main.html
+
+### 2026-04-04 (chain decoration phrase-awareness)
+
+Summary
+
+- Fixed chain step decoration: `tok-chain-step-N` was stuck at step-1 for all operators in chains containing function-call operands.
+- Rebuilt chain detection algorithm to use `editorPhraseLength` when advancing over right operands.
+
+Implementation notes
+
+- In `main.html`, chain decoration loop now calls `editorPhraseLength` to compute operand span for function calls.
+- Each infix operator in the chain correctly gets `tok-chain-step-1`, `tok-chain-step-2`, `tok-chain-step-3`, etc.
+
+Validation cases
+
+- `"" + times-count 2 + "," + times-count 1` shows step-1/step-2/step-3 on the three `+` operators.
+
+Files touched in this entry
+
+- main.html
+
+### 2026-04-04 (dash-to-underscore normalization)
+
+Summary
+
+- Source identifiers written with dashes (e.g. `times-count`) now auto-resolve to their snake_case equivalents (`times_count`).
+- Source text is preserved as typed; normalization happens at parse time and in editor namespace lookups.
+
+Implementation notes
+
+- In `main.js`, added `normalizeWordToken(word)` called inside `parseCode`; skips JSON strings, standalone `-`, and non-identifier patterns.
+- In `main.html`, added `normalizeLookupWord(word)` bridging to the runtime helper; all namespace lookups in editor go through it.
+- Parse hints display the normalized form (e.g. `times_count`) even when source uses `times-count`.
+
+Validation cases
+
+- Source `times-count 1` resolves identically to `times_count 1`.
+- Parse hint shows `times_count(1)` when source reads `times-count 1`.
+
+Files touched in this entry
+
+- main.js
+- main.html
+- documentation/progression.md

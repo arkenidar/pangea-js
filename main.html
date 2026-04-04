@@ -188,35 +188,6 @@
         box-shadow: none;
       }
 
-      .phrase-tail-marker {
-        display: inline;
-        border-radius: 1px;
-      }
-
-      .phrase-tail-marker::after {
-        content: "";
-        display: inline-block;
-        margin-left: 1px;
-        width: 4px;
-        height: 4px;
-        vertical-align: middle;
-        transform: translateY(-0.05em);
-        border-radius: 999px;
-        background: var(--phrase-tail-color, rgba(51, 65, 85, 0.85));
-        opacity: 0.9;
-        pointer-events: none;
-      }
-
-      .phrase-tail-0 {
-        --phrase-tail-color: rgba(51, 65, 85, 0.9);
-        box-shadow: none;
-      }
-
-      .phrase-tail-1 {
-        --phrase-tail-color: rgba(2, 132, 199, 0.92);
-        box-shadow: none;
-      }
-
       .tok-literal {
         color: #7c3aed;
       }
@@ -519,7 +490,6 @@ i
 
         var partGroupSteps = new Array(parts.length);
         var partPhraseBand = new Array(parts.length);
-        var partPhraseTailBand = new Array(parts.length);
         var partDefSig = new Array(parts.length);
         var tokenWords = tokenIndices.map(function (partIndex) {
           return parts[partIndex].raw;
@@ -558,24 +528,21 @@ i
         }
 
         var phraseBand = 0;
-        function decorateRange(start, end, withTailTick) {
+        function decorateRange(start, end) {
           if (start < 0 || end < start || end >= tokenIndices.length) return;
           for (var phraseToken = start; phraseToken <= end; phraseToken++) {
             partPhraseBand[tokenIndices[phraseToken]] = phraseBand;
           }
-          if (withTailTick === true) {
-            partPhraseTailBand[tokenIndices[end]] = phraseBand;
-          }
           phraseBand = 1 - phraseBand;
         }
 
-        // Decorate full `def` phrase and tick its end (signature + body).
+        // Decorate full `def` phrase (signature + body).
         for (var d = 0; d < tokenWords.length; d++) {
           if (normalizeLookupWord(tokenWords[d]) !== "def") continue;
           var defLen = editorPhraseLength(tokenWords, d, phraseCache, true);
           if (!defLen || defLen < 1) defLen = 1;
           var defEnd = Math.min(d + defLen - 1, tokenWords.length - 1);
-          decorateRange(d, defEnd, true);
+          decorateRange(d, defEnd);
           partDefSig[tokenIndices[d]] = true;
           if (d + 1 < tokenWords.length) partDefSig[tokenIndices[d + 1]] = true;
         }
@@ -587,7 +554,7 @@ i
           if (o - 1 < 0) continue;
           var beforeEnd = o - 1;
           var beforeStart = previousPhraseStart(beforeEnd);
-          decorateRange(beforeStart, beforeEnd, false);
+          decorateRange(beforeStart, beforeEnd);
         }
 
         function phraseStartAt(tokenEndIndex) {
@@ -743,24 +710,13 @@ i
             activePhraseBand = myPhraseBand;
           }
 
-          var myPhraseTailBand =
-            partPhraseTailBand[j] === undefined || partPhraseTailBand[j] === null
-              ? null
-              : partPhraseTailBand[j];
+          var tokenClasses = part.className + (partDefSig[j] ? " def-sig" : "");
 
           var tokenHtml = tokenSpan(
             part.raw,
-            part.className + (partDefSig[j] ? " def-sig" : ""),
+            tokenClasses,
             activeToken(part.start, part.end, caret, text.length),
           );
-          if (myPhraseTailBand !== null) {
-            tokenHtml =
-              '<span class="phrase-tail-marker phrase-tail-' +
-              myPhraseTailBand +
-              '">' +
-              tokenHtml +
-              "</span>";
-          }
           html.push(tokenHtml);
 
           var nextPhraseBand =

@@ -1,0 +1,177 @@
+body {
+  font-family: monospace;
+  margin: 0;
+  padding: 1rem;
+  background: #fafafa;
+  color: #1f2937;
+}
+
+.panel {
+  border: 1px solid #d4d4d4;
+  border-radius: 8px;
+  padding: 0.7rem;
+  background: #fff;
+}
+
+#printOut {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+button {
+  font: inherit;
+  padding: 0.3rem 0.6rem;
+}
+
+.editor-shell {
+  position: relative;
+  border: 1px solid #c8c8c8;
+  border-radius: 6px;
+  background: #ffffff;
+  overflow: hidden;
+  min-height: 12rem;
+}
+
+.editor-overlay,
+.editor-input {
+  font: inherit;
+  line-height: 1.5;
+  letter-spacing: 0;
+  tab-size: 4;
+  padding: 0.75rem;
+  white-space: pre-wrap;
+  box-sizing: border-box;
+}
+
+.editor-overlay {
+  margin: 0;
+  min-height: 12rem;
+  pointer-events: none;
+  color: #111827;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.editor-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 12rem;
+  margin: 0;
+  border: 0;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  color: transparent;
+  caret-color: #111827;
+}
+
+.editor-input::selection {
+  background: rgba(59, 130, 246, 0.22);
+}
+
+.status {
+  margin-top: 0.5rem;
+  color: #555;
+}
+
+.parse-hint {
+  margin-top: 0.35rem;
+  color: #4b5563;
+  font-size: 0.95em;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.parse-assoc {
+  color: #6b7280;
+  font-size: 0.9em;
+}
+
+/* --- Token colours --- */
+
+.tok-string {
+  color: #0f766e;
+}
+
+.tok-call {
+  color: #1d4ed8;
+}
+
+.tok-operator {
+  color: #b45309;
+  font-weight: 700;
+}
+
+.tok-literal {
+  color: #7c3aed;
+}
+
+.tok-bracket {
+  font-weight: 700;
+}
+
+.tok-placeholder {
+  color: #9ca3af;
+}
+
+.tok-chain-op {
+  position: relative;
+  padding: 0;
+}
+
+/* Chain-step underline colours */
+.tok-chain-step-1 { box-shadow: inset 0 2px 0 rgba(220, 38, 38, 0.72); }
+.tok-chain-step-2 { box-shadow: inset 0 2px 0 rgba(234, 88, 12, 0.72); }
+.tok-chain-step-3 { box-shadow: inset 0 2px 0 rgba(202, 138, 4, 0.72); }
+.tok-chain-step-4 { box-shadow: inset 0 2px 0 rgba(101, 163, 13, 0.72); }
+.tok-chain-step-5 { box-shadow: inset 0 2px 0 rgba(8, 145, 178, 0.72); }
+.tok-chain-step-6 { box-shadow: inset 0 2px 0 rgba(37, 99, 235, 0.72); }
+
+/* Visual group boxes for chain steps */
+.group-box {
+  position: relative;
+  display: inline;
+}
+.group-box-1 { background: rgba(220, 38, 38, 0.07); box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.35); border-radius: 3px; }
+.group-box-2 { background: rgba(234, 88, 12, 0.07);  box-shadow: 0 0 0 1px rgba(234, 88, 12, 0.35);  border-radius: 3px; }
+.group-box-3 { background: rgba(202, 138, 4, 0.07);  box-shadow: 0 0 0 1px rgba(202, 138, 4, 0.35);  border-radius: 3px; }
+.group-box-4 { background: rgba(101, 163, 13, 0.07); box-shadow: 0 0 0 1px rgba(101, 163, 13, 0.35); border-radius: 3px; }
+.group-box-5 { background: rgba(8, 145, 178, 0.07);  box-shadow: 0 0 0 1px rgba(8, 145, 178, 0.35);  border-radius: 3px; }
+.group-box-6 { background: rgba(37, 99, 235, 0.07);  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);  border-radius: 3px; }
+
+.phrase-box {
+  border-radius: 2px;
+}
+
+.phrase-tone-0 { box-shadow: none; }
+.phrase-tone-1 { box-shadow: none; }
+
+/* Definition signature highlight */
+.def-sig {
+  font-weight: 700;
+}
+
+/* Bracket depth colours */
+.bracket-0 { color: #6b7280; }
+.bracket-1 { color: #2563eb; }
+.bracket-2 { color: #0f766e; }
+.bracket-3 { color: #b45309; }
+
+/* Active token highlight */
+.is-active {
+  background: rgba(245, 158, 11, 0.2);
+  border-radius: 3px;
+  box-shadow: inset 0 -1px 0 rgba(217, 119, 6, 0.55);
+}

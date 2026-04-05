@@ -5,7 +5,7 @@
       "type": "editor-browser",
       "request": "launch",
       "name": "Launch in Integrated Browser",
-      "url": "file://${workspaceFolder}/main.html"
+      "url": "file://${workspaceFolder}/src/browser/main.html"
     }
   ]
 }

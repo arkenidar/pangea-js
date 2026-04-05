@@ -2,14 +2,15 @@
   "name": "pangea",
   "version": "1.0.0",
   "description": "Pangea is a toy language project for learning, experimentation, and language design.",
-  "main": "main.js",
+  "main": "src/core/runtime.js",
   "directories": {
     "doc": "docs",
     "example": "examples"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "format": "prettier --write '**/*.{html,js}' --ignore-path .gitignore"
+    "format": "prettier --write '**/*.{html,js}' --ignore-path .gitignore",
+    "cli": "node src/cli/pangea.js"
   },
   "repository": {
     "type": "git",
@@ -18,7 +19,13 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
+  "bin": {
+    "pangea": "./src/cli/pangea.js"
+  },
+  "exports": {
+    ".": "./src/core/runtime.js"
+  },
   "bugs": {
     "url": "https://github.com/arkenidar/pangea-js/issues"
   },

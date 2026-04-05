@@ -1,0 +1,932 @@
+import {
+  exec,
+  namespace,
+  words,
+  parse,
+  parseCode,
+  normalizeWordToken,
+  setPrintSink,
+  setStateChangeListener,
+} from "../core/runtime.js";
+
+function printToHTML(string) {
+  document.getElementById("printOut").textContent += string;
+}
+setPrintSink(printToHTML);
+
+function seedRuntime() {
+  exec(`( def factorial#1
+ if ( arg 1 ) == 0
+  1
+  ( arg 1 ) * factorial ( arg 1 ) - 1
+print factorial 3 )`);
+
+  exec(`( print "fizz-buzz+game"
+
+def multiple#2
+0 == ( ( arg 1 ) % ( arg 2 ) )
+
+def i#0
+times_count 1
+
+def multiple_of#1
+multiple i arg 1
+
+20 times (
+
+    print
+    "fizz-buzz" when multiple_of 15
+    "fizz" when multiple_of 3
+    "buzz" when multiple_of 5
+    i
+)
+
+)`);
+}
+var editorShell = document.getElementById("editorShell");
+var editorOverlay = document.getElementById("editorOverlay");
+var executeThis = document.getElementById("executeThis");
+var editorStatus = document.getElementById("editorStatus");
+var editorStats = document.getElementById("editorStats");
+var editorBalance = document.getElementById("editorBalance");
+var editorParseHint = document.getElementById("editorParseHint");
+var editorAssocHint = document.getElementById("editorAssocHint");
+
+var draftTimer = null;
+var MIN_EDITOR_HEIGHT = 220;
+var MATCHING = { "(": ")", "[": "]", "{": "}" };
+var OPENING = Object.keys(MATCHING);
+var CLOSING = Object.values(MATCHING);
+
+function escapeHtml(text) {
+  return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function sourceWord(word) {
+  if (typeof parse(word) != "string") return word;
+  var decoded = parse(word);
+  var parts = decoded.split("+");
+  parts = parts.map(function (part) {
+    return part.replace(/ /g, "+");
+  });
+  return JSON.stringify(parts.join("(+)"));
+}
+
+function setStatus(text) {
+  editorStatus.textContent = text;
+}
+
+function syncEditorHeight() {
+  executeThis.style.height = "0px";
+  var nextHeight = Math.max(MIN_EDITOR_HEIGHT, executeThis.scrollHeight);
+  editorShell.style.height = nextHeight + "px";
+  executeThis.style.height = nextHeight + "px";
+  editorOverlay.style.minHeight = nextHeight + "px";
+}
+
+function normalizeLookupWord(word) {
+  if (typeof normalizeWordToken == "function") return normalizeWordToken(word);
+  return word;
+}
+
+function tokenClass(token) {
+  if (typeof parse(token) != "undefined") return "tok-literal";
+  var normalized = normalizeLookupWord(token);
+  var id = normalized.indexOf("#") != -1 ? normalized.split("#")[0] : normalized;
+  var entry = namespace[id];
+  if (entry && entry.operator) return "tok-operator";
+  if (entry) return "tok-call";
+  return "tok-plain";
+}
+
+function activeToken(start, end, caret, textLength) {
+  if (start === end) return false;
+  if (caret >= start && caret < end) return true;
+  return caret === textLength && end === textLength;
+}
+
+function tokenSpan(raw, className, isActive, attrs) {
+  var classes = className;
+  if (isActive) classes += " is-active";
+  var attrText = "";
+  if (attrs) {
+    for (var key in attrs) {
+      attrText += " " + key + '="' + escapeHtml(attrs[key]) + '"';
+    }
+  }
+  return '<span class="' + classes + '"' + attrText + ">" + escapeHtml(raw) + "</span>";
+}
+
+function tokenMeta(rawToken) {
+  if (
+    rawToken == "(" ||
+    rawToken == ")" ||
+    rawToken == "[" ||
+    rawToken == "]" ||
+    rawToken == "{" ||
+    rawToken == "}"
+  ) {
+    return { kind: "bracket" };
+  }
+  if (typeof parse(rawToken) != "undefined") {
+    return { kind: "literal" };
+  }
+  var normalized = normalizeLookupWord(rawToken);
+  var id = normalized.indexOf("#") != -1 ? normalized.split("#")[0] : normalized;
+  var entry = namespace[id];
+  if (entry && entry.operator == "infix")
+    return { kind: "infix", chainable: entry.chainable === true };
+  if (entry && entry.operator == "postfix") return { kind: "postfix" };
+  if (entry) return { kind: "call" };
+  return { kind: "plain" };
+}
+
+function analyzeEditorText(text, caret) {
+  if (!text.length) {
+    return {
+      tokenCount: 0,
+      html: '<span class="tok-placeholder">type pangea code here</span>',
+    };
+  }
+
+  var parts = [];
+  var index = 0;
+  var tokenCount = 0;
+  var depth = 0;
+
+  while (index < text.length) {
+    var ch = text[index];
+
+    if (/\s/.test(ch)) {
+      var whitespaceStart = index;
+      while (index < text.length && /\s/.test(text[index])) index++;
+      parts.push({
+        kind: "ws",
+        raw: text.slice(whitespaceStart, index),
+        start: whitespaceStart,
+        end: index,
+        depth: depth,
+      });
+      continue;
+    }
+
+    if (ch == '"') {
+      var stringStart = index;
+      index++;
+      while (index < text.length) {
+        if (text[index] == "\\") {
+          index += 2;
+          continue;
+        }
+        if (text[index] == '"') {
+          index++;
+          break;
+        }
+        index++;
+      }
+      tokenCount++;
+      parts.push({
+        kind: "token",
+        raw: text.slice(stringStart, index),
+        start: stringStart,
+        end: index,
+        depth: depth,
+        className: "tok-string",
+      });
+      continue;
+    }
+
+    if (OPENING.indexOf(ch) != -1 || CLOSING.indexOf(ch) != -1) {
+      var bracketDepth = depth;
+      if (CLOSING.indexOf(ch) != -1) bracketDepth = Math.max(depth - 1, 0);
+      tokenCount++;
+      parts.push({
+        kind: "token",
+        raw: ch,
+        start: index,
+        end: index + 1,
+        depth: bracketDepth,
+        className: "tok-bracket bracket-" + (bracketDepth % 4),
+        bracket: true,
+      });
+      if (OPENING.indexOf(ch) != -1) depth++;
+      if (CLOSING.indexOf(ch) != -1) depth = Math.max(depth - 1, 0);
+      index++;
+      continue;
+    }
+
+    var tokenStart = index;
+    while (
+      index < text.length &&
+      !/\s/.test(text[index]) &&
+      OPENING.indexOf(text[index]) == -1 &&
+      CLOSING.indexOf(text[index]) == -1 &&
+      text[index] != '"'
+    )
+      index++;
+
+    var rawToken = text.slice(tokenStart, index);
+    tokenCount++;
+    parts.push({
+      kind: "token",
+      raw: rawToken,
+      start: tokenStart,
+      end: index,
+      depth: depth,
+      className: tokenClass(rawToken),
+      meta: tokenMeta(rawToken),
+    });
+  }
+
+  var tokenIndices = [];
+  for (var p = 0; p < parts.length; p++) {
+    if (parts[p].kind == "token") tokenIndices.push(p);
+  }
+
+  var partGroupSteps = new Array(parts.length);
+  var partPhraseBand = new Array(parts.length);
+  var partDefSig = new Array(parts.length);
+  var tokenWords = tokenIndices.map(function (partIndex) {
+    return parts[partIndex].raw;
+  });
+  var phraseCache = [];
+
+  function previousPhraseStart(tokenEndIndex) {
+    if (tokenEndIndex < 0) return 0;
+    var closers = { ")": "(", "]": "[", "}": "{" };
+    var result = tokenEndIndex;
+    var endTok = tokenWords[result];
+    if (closers[endTok] !== undefined) {
+      var opener = closers[endTok];
+      var depth = 1;
+      for (var i = result - 1; i >= 0; i--) {
+        if (tokenWords[i] === endTok) depth++;
+        else if (tokenWords[i] === opener) {
+          depth--;
+          if (depth === 0) {
+            result = i;
+            break;
+          }
+        }
+      }
+    }
+    while (result > 0) {
+      var prevStart = result - 1;
+      var prevLen = editorPhraseLength(tokenWords, prevStart, phraseCache, true);
+      if (prevStart + prevLen - 1 === tokenEndIndex) {
+        result = prevStart;
+      } else {
+        break;
+      }
+    }
+    return result;
+  }
+
+  var phraseBand = 0;
+  function decorateRange(start, end) {
+    if (start < 0 || end < start || end >= tokenIndices.length) return;
+    for (var phraseToken = start; phraseToken <= end; phraseToken++) {
+      partPhraseBand[tokenIndices[phraseToken]] = phraseBand;
+    }
+    phraseBand = 1 - phraseBand;
+  }
+
+  // Decorate full `def` phrase (signature + body).
+  for (var d = 0; d < tokenWords.length; d++) {
+    if (normalizeLookupWord(tokenWords[d]) !== "def") continue;
+    var defLen = editorPhraseLength(tokenWords, d, phraseCache, true);
+    if (!defLen || defLen < 1) defLen = 1;
+    var defEnd = Math.min(d + defLen - 1, tokenWords.length - 1);
+    decorateRange(d, defEnd);
+    partDefSig[tokenIndices[d]] = true;
+    if (d + 1 < tokenWords.length) partDefSig[tokenIndices[d + 1]] = true;
+  }
+
+  // Decorate phrase immediately before flow-style operators.
+  for (var o = 0; o < tokenWords.length; o++) {
+    var op = normalizeLookupWord(tokenWords[o]);
+    if (!(op === "times" || op === "when" || op === "unless")) continue;
+    if (o - 1 < 0) continue;
+    var beforeEnd = o - 1;
+    var beforeStart = previousPhraseStart(beforeEnd);
+    decorateRange(beforeStart, beforeEnd);
+  }
+
+  function phraseStartAt(tokenEndIndex) {
+    if (tokenEndIndex < 0) return 0;
+    // If the last token of the left operand is a closing bracket, jump
+    // directly to the matching opener first, then continue walking back.
+    var closers = { ")": "(", "]": "[", "}": "{" };
+    var result = tokenEndIndex;
+    var endTok = tokenWords[result];
+    if (closers[endTok] !== undefined) {
+      var opener = closers[endTok];
+      var depth = 1;
+      for (var i = result - 1; i >= 0; i--) {
+        if (tokenWords[i] === endTok) depth++;
+        else if (tokenWords[i] === opener) {
+          depth--;
+          if (depth === 0) {
+            result = i;
+            break;
+          }
+        }
+      }
+    }
+    // Walk backward one call-boundary at a time: if the token immediately
+    // before `result` is a function whose phrase ends at result, include it.
+    while (result > 0) {
+      var prevStart = result - 1;
+      var prevLen = editorPhraseLength(tokenWords, prevStart, phraseCache, true);
+      if (prevStart + prevLen - 1 === tokenEndIndex) {
+        result = prevStart;
+      } else {
+        break;
+      }
+    }
+    return result;
+  }
+
+  // Detect only chainable infix chains and annotate them.
+  for (var t = 0; t < tokenIndices.length; t++) {
+    var opPart = parts[tokenIndices[t]];
+    if (!(opPart.meta && opPart.meta.kind == "infix" && opPart.meta.chainable)) continue;
+    if (t == 0 || t + 1 >= tokenIndices.length) continue;
+
+    var chainStartToken = phraseStartAt(t - 1);
+    var chainOps = [];
+    var chainDepth = opPart.depth;
+    var cursor = t;
+
+    while (true) {
+      var currentPart = parts[tokenIndices[cursor]];
+      if (
+        !(
+          currentPart.meta &&
+          currentPart.meta.kind == "infix" &&
+          currentPart.meta.chainable &&
+          currentPart.depth == chainDepth
+        )
+      )
+        break;
+      if (cursor + 1 >= tokenIndices.length) break;
+
+      var rightStartToken = cursor + 1;
+      var rightLen = editorPhraseLength(tokenWords, rightStartToken, phraseCache, true);
+      var rightEndToken = rightStartToken + rightLen - 1;
+
+      chainOps.push({
+        operatorToken: cursor,
+        rightEndToken: rightEndToken,
+      });
+
+      var nextOperator = rightEndToken + 1;
+      if (nextOperator >= tokenIndices.length) break;
+      var nextPart = parts[tokenIndices[nextOperator]];
+      if (
+        !(
+          nextPart.meta &&
+          nextPart.meta.kind == "infix" &&
+          nextPart.meta.chainable &&
+          nextPart.depth == chainDepth
+        )
+      )
+        break;
+      cursor = nextOperator;
+    }
+
+    if (!chainOps.length) continue;
+
+    for (var stepIndex = 0; stepIndex < chainOps.length; stepIndex++) {
+      var step = Math.min(stepIndex + 1, 6);
+      var operatorToken = chainOps[stepIndex].operatorToken;
+      var operatorPartIndex = tokenIndices[operatorToken];
+      parts[operatorPartIndex].className += " tok-chain-op tok-chain-step-" + step;
+
+      // Group for this step spans from chain start to current right operand.
+      var stepEndToken = chainOps[stepIndex].rightEndToken;
+      for (
+        var tokenPos = chainStartToken;
+        tokenPos <= stepEndToken && tokenPos < tokenIndices.length;
+        tokenPos++
+      ) {
+        var groupedPartIndex = tokenIndices[tokenPos];
+        if (!partGroupSteps[groupedPartIndex]) partGroupSteps[groupedPartIndex] = [];
+        partGroupSteps[groupedPartIndex].push(step);
+      }
+    }
+
+    // Skip tokens consumed by this chain.
+    t = chainOps[chainOps.length - 1].rightEndToken;
+  }
+
+  var html = [];
+  var activeGroupSteps = new Set();
+  var activePhraseBand = null;
+
+  function nextTokenPartIndex(fromIndex) {
+    for (var n = fromIndex + 1; n < parts.length; n++) {
+      if (parts[n].kind == "token") return n;
+    }
+    return -1;
+  }
+
+  for (var j = 0; j < parts.length; j++) {
+    var part = parts[j];
+    if (part.kind == "ws") {
+      html.push(escapeHtml(part.raw));
+      continue;
+    }
+
+    var myGroups = partGroupSteps[j] ? partGroupSteps[j].slice().sort((a, b) => a - b) : [];
+    var nextTokenIndex = nextTokenPartIndex(j);
+    var nextGroups =
+      nextTokenIndex == -1
+        ? []
+        : partGroupSteps[nextTokenIndex]
+          ? partGroupSteps[nextTokenIndex].slice().sort((a, b) => a - b)
+          : [];
+
+    // Open new groups
+    for (var g = 0; g < myGroups.length; g++) {
+      var step = myGroups[g];
+      if (!activeGroupSteps.has(step)) {
+        html.push('<span class="group-box group-box-' + step + '">');
+        activeGroupSteps.add(step);
+      }
+    }
+
+    var myPhraseBand =
+      partPhraseBand[j] === undefined || partPhraseBand[j] === null ? null : partPhraseBand[j];
+    if (myPhraseBand !== null && activePhraseBand !== myPhraseBand) {
+      html.push('<span class="phrase-box phrase-tone-' + myPhraseBand + '">');
+      activePhraseBand = myPhraseBand;
+    }
+
+    var tokenClasses = part.className + (partDefSig[j] ? " def-sig" : "");
+
+    var tokenHtml = tokenSpan(
+      part.raw,
+      tokenClasses,
+      activeToken(part.start, part.end, caret, text.length),
+    );
+    html.push(tokenHtml);
+
+    var nextPhraseBand =
+      nextTokenIndex == -1 ||
+      partPhraseBand[nextTokenIndex] === undefined ||
+      partPhraseBand[nextTokenIndex] === null
+        ? null
+        : partPhraseBand[nextTokenIndex];
+    if (activePhraseBand !== null && nextPhraseBand !== activePhraseBand) {
+      html.push("</span>");
+      activePhraseBand = null;
+    }
+
+    // Close groups that end
+    var stepsToClose = [];
+    for (var step of activeGroupSteps) {
+      if (myGroups.indexOf(step) >= 0 && nextGroups.indexOf(step) < 0) {
+        stepsToClose.push(step);
+      }
+    }
+    for (var i = 0; i < stepsToClose.length; i++) {
+      html.push("</span>");
+      activeGroupSteps.delete(stepsToClose[i]);
+    }
+  }
+
+  // Close remaining groups
+  if (activePhraseBand !== null) {
+    html.push("</span>");
+  }
+  for (var step of activeGroupSteps) {
+    html.push("</span>");
+  }
+
+  return { tokenCount: tokenCount, html: html.join("") };
+}
+
+function checkBalance(text) {
+  var stack = [];
+  for (var i = 0; i < text.length; i++) {
+    var ch = text[i];
+    if (OPENING.indexOf(ch) != -1) stack.push(ch);
+    if (CLOSING.indexOf(ch) != -1) {
+      var open = stack.pop();
+      if (!open || MATCHING[open] != ch) return { ok: false, message: "unbalanced delimiters" };
+    }
+  }
+  if (stack.length) return { ok: false, message: "missing closing delimiter" };
+  return { ok: true, message: "balanced" };
+}
+
+function editorWordArity(word) {
+  if (!word) return;
+  if (word.indexOf("#") != -1) {
+    var parts = word.split("#");
+    var maybeArity = parseInt(parts[1]);
+    if (!isNaN(maybeArity)) return 0;
+  }
+  var normalized = normalizeLookupWord(word);
+  var entry = namespace[normalized] || namespace.arities[normalized];
+  if (!entry) return;
+  return entry.arity;
+}
+
+function editorPhraseLength(tokens, index, cache, skipOperator) {
+  if (!skipOperator && cache[index] !== undefined) return cache[index];
+  var word = tokens[index];
+  if (word === undefined) return 0;
+
+  var length = 1;
+
+  if (typeof parse(word) !== "undefined") {
+  } else if (["(", "[", "{"].indexOf(word) != -1) {
+    var matching = { "(": ")", "[": "]", "{": "}" };
+    while (true) {
+      var next = index + length;
+      if (tokens[next] === undefined) break;
+      if (tokens[next] == matching[word]) {
+        cache[next] = 1;
+        length++;
+        break;
+      }
+      length += editorPhraseLength(tokens, next, cache, false);
+    }
+  } else {
+    var arity = editorWordArity(word);
+    var normalized = normalizeLookupWord(word);
+    var entry = namespace[normalized] || namespace.arities[normalized];
+    var atomicArgs = entry && entry.atomicArgs === true;
+    if (arity !== undefined) {
+      for (var i = 0; i < arity; i++) {
+        length += editorPhraseLength(tokens, index + length, cache, atomicArgs);
+      }
+    }
+  }
+
+  if (!skipOperator) {
+    var maybeOperator = normalizeLookupWord(tokens[index + length]);
+    var opEntry = namespace[maybeOperator];
+    if (opEntry && (opEntry.operator == "postfix" || opEntry.operator == "infix")) {
+      length += editorPhraseLength(tokens, index + length, cache, false);
+    }
+  }
+
+  if (!skipOperator) cache[index] = length;
+  return length;
+}
+
+function displayToken(token) {
+  if (typeof parse(token) == "string") return sourceWord(token);
+  return token;
+}
+
+function isFullyWrapped(expression) {
+  if (!expression || expression[0] != "(" || expression[expression.length - 1] != ")") return false;
+  var depth = 0;
+  for (var i = 0; i < expression.length; i++) {
+    var ch = expression[i];
+    if (ch == "(") depth++;
+    if (ch == ")") depth--;
+    if (depth == 0 && i < expression.length - 1) return false;
+  }
+  return depth == 0;
+}
+
+function trimRedundantParens(expression) {
+  var next = expression;
+  while (isFullyWrapped(next)) {
+    next = next.slice(1, -1).trim();
+  }
+  return next;
+}
+
+function renderFunctionArgument(tokens, argIndex, cache, atomicArg) {
+  return trimRedundantParens(renderParsedPhrase(tokens, argIndex, cache, atomicArg === true));
+}
+
+function renderParsedPhrase(tokens, index, cache, skipOperator) {
+  var word = tokens[index];
+  if (word === undefined) return "";
+
+  var baseRendered = "";
+
+  if (typeof parse(word) !== "undefined") {
+    baseRendered = displayToken(word);
+  } else if (word == "(" || word == "[" || word == "{") {
+    var closeByOpen = { "(": ")", "[": "]", "{": "}" };
+    var close = closeByOpen[word];
+    var cursor = index + 1;
+    var innerParts = [];
+
+    while (tokens[cursor] !== undefined && tokens[cursor] != close) {
+      innerParts.push(renderParsedPhrase(tokens, cursor, cache, false));
+      cursor += editorPhraseLength(tokens, cursor, cache, false);
+    }
+
+    baseRendered = word + innerParts.join(" ") + close;
+  } else {
+    var normalized = normalizeLookupWord(word);
+    var entry = namespace[normalized];
+    var arity = editorWordArity(word);
+
+    if (entry && entry.operator == "postfix") {
+      baseRendered = displayToken(word);
+    } else if (entry && entry.operator == "infix") {
+      baseRendered = displayToken(word);
+    } else if (arity !== undefined && arity > 0) {
+      var args = [];
+      var argIndex = index + 1;
+      var atomicArgs = entry && entry.atomicArgs === true;
+      for (var i = 0; i < arity; i++) {
+        args.push(renderFunctionArgument(tokens, argIndex, cache, atomicArgs));
+        argIndex += editorPhraseLength(tokens, argIndex, cache, atomicArgs);
+      }
+      baseRendered = displayToken(word) + "(" + args.join(", ") + ")";
+    } else {
+      baseRendered = displayToken(word);
+    }
+  }
+
+  if (skipOperator) return baseRendered;
+
+  var baseLen = editorPhraseLength(tokens, index, cache, true);
+  var operatorIndex = index + baseLen;
+  var operatorWord = tokens[operatorIndex];
+  var operatorEntry = namespace[normalizeLookupWord(operatorWord)];
+
+  if (!operatorEntry || !operatorEntry.operator) return baseRendered;
+
+  if (operatorEntry.operator == "postfix") {
+    return "(" + trimRedundantParens(baseRendered) + " " + displayToken(operatorWord) + ")";
+  }
+
+  if (operatorEntry.operator == "infix") {
+    var leftRendered = trimRedundantParens(baseRendered);
+
+    if (operatorEntry.chainable !== true) {
+      var singleRightIndex = operatorIndex + 1;
+      var singleRightRendered = trimRedundantParens(
+        renderParsedPhrase(tokens, singleRightIndex, cache, false),
+      );
+      return (
+        "(" + leftRendered + " " + displayToken(operatorWord) + " " + singleRightRendered + ")"
+      );
+    }
+
+    var scanIndex = operatorIndex;
+
+    while (true) {
+      var scanOperatorWord = tokens[scanIndex];
+      var scanOperatorEntry = namespace[normalizeLookupWord(scanOperatorWord)];
+      if (
+        !(
+          scanOperatorEntry &&
+          scanOperatorEntry.operator == "infix" &&
+          scanOperatorEntry.chainable === true
+        )
+      )
+        break;
+
+      var rightIndex = scanIndex + 1;
+      var rightRendered = trimRedundantParens(renderParsedPhrase(tokens, rightIndex, cache, true));
+      leftRendered =
+        "(" + leftRendered + " " + displayToken(scanOperatorWord) + " " + rightRendered + ")";
+      scanIndex = rightIndex + editorPhraseLength(tokens, rightIndex, cache, true);
+    }
+
+    return leftRendered;
+  }
+
+  return baseRendered;
+}
+
+function chainFromStart(tokens, startIndex, cache) {
+  var baseLength = editorPhraseLength(tokens, startIndex, cache, true);
+  var operatorIndex = startIndex + baseLength;
+  var operatorWord = tokens[operatorIndex];
+  var operatorEntry = namespace[normalizeLookupWord(operatorWord)];
+  if (
+    !(
+      operatorEntry &&
+      operatorEntry.operator == "infix" &&
+      operatorEntry.arity == 1 &&
+      operatorEntry.chainable === true
+    )
+  )
+    return null;
+
+  var current = trimRedundantParens(renderParsedPhrase(tokens, startIndex, cache, true));
+  var steps = [];
+  var scanIndex = operatorIndex;
+
+  while (true) {
+    var scanWord = tokens[scanIndex];
+    var scanEntry = namespace[normalizeLookupWord(scanWord)];
+    if (
+      !(
+        scanEntry &&
+        scanEntry.operator == "infix" &&
+        scanEntry.arity == 1 &&
+        scanEntry.chainable === true
+      )
+    )
+      break;
+
+    var rightIndex = scanIndex + 1;
+    var right = trimRedundantParens(renderParsedPhrase(tokens, rightIndex, cache, true));
+    current = "(" + current + " " + displayToken(scanWord) + " " + right + ")";
+    steps.push(current);
+
+    scanIndex = rightIndex + editorPhraseLength(tokens, rightIndex, cache, true);
+  }
+
+  if (!steps.length) return null;
+  return { steps: steps, length: steps.length };
+}
+
+function findStrongestChain(tokens, cache) {
+  var best = null;
+  for (var i = 0; i < tokens.length; i++) {
+    var chain = chainFromStart(tokens, i, cache);
+    if (!chain) continue;
+    if (!best || chain.length > best.length) best = chain;
+  }
+  return best;
+}
+
+function formatHintHtml(text) {
+  return escapeHtml(text)
+    .replace(/ ; then /g, "<wbr> ; then ")
+    .replace(/, /g, ",&nbsp;")
+    .replace(/ -> /g, " <wbr>-> ");
+}
+
+function updateParseHint(text) {
+  var trimmed = text.trim();
+  if (!trimmed.length) {
+    editorParseHint.innerHTML = "";
+    editorAssocHint.innerHTML = "";
+    return;
+  }
+
+  var tokens = parseCode(trimmed).filter(function (token) {
+    return token.length;
+  });
+  if (!tokens.length) {
+    editorParseHint.innerHTML = "";
+    editorAssocHint.innerHTML = "";
+    return;
+  }
+
+  var cache = [];
+
+  var cursor = 0;
+  var phrases = [];
+  while (cursor < tokens.length) {
+    phrases.push(renderParsedPhrase(tokens, cursor, cache, false));
+    cursor += editorPhraseLength(tokens, cursor, cache, false);
+    if (cursor <= 0) break;
+  }
+
+  var hint = "parsed as: " + phrases.join(" ; then ");
+  editorParseHint.innerHTML = formatHintHtml(hint);
+
+  var chain = findStrongestChain(tokens, cache);
+  if (chain) {
+    editorAssocHint.innerHTML = formatHintHtml("left-to-right chain: " + chain.steps.join(" -> "));
+  } else {
+    editorAssocHint.innerHTML = "";
+  }
+}
+
+function renderEditorDecorations() {
+  var text = executeThis.value;
+  var analysis = analyzeEditorText(text, executeThis.selectionStart || 0);
+  editorOverlay.innerHTML = analysis.html;
+  editorStats.textContent = "tokens: " + analysis.tokenCount;
+  editorBalance.textContent = checkBalance(text).message;
+  updateParseHint(text);
+  syncEditorHeight();
+}
+
+function updateDraftFromEditor() {
+  renderEditorDecorations();
+  setStatus(checkBalance(executeThis.value).ok ? "editing" : "delimiter issue");
+}
+
+function debouncedDraftUpdate() {
+  if (draftTimer) clearTimeout(draftTimer);
+  draftTimer = setTimeout(updateDraftFromEditor, 60);
+}
+
+function applyAutoPair(event) {
+  var pairs = { "(": ")", "[": "]", "{": "}", '"': '"', "'": "'" };
+  if (!(event.key in pairs)) return;
+  var start = executeThis.selectionStart;
+  var end = executeThis.selectionEnd;
+  var value = executeThis.value;
+  var selected = value.slice(start, end);
+  event.preventDefault();
+  executeThis.value =
+    value.slice(0, start) + event.key + selected + pairs[event.key] + value.slice(end);
+  var caret = selected.length ? end + 2 : start + 1;
+  executeThis.selectionStart = executeThis.selectionEnd = caret;
+  updateDraftFromEditor();
+}
+
+function handleEditorKeys(event) {
+  if (event.key == "Tab") {
+    event.preventDefault();
+    var start = executeThis.selectionStart;
+    var end = executeThis.selectionEnd;
+    var value = executeThis.value;
+    executeThis.value = value.slice(0, start) + "  " + value.slice(end);
+    executeThis.selectionStart = executeThis.selectionEnd = start + 2;
+    setTimeout(updateDraftFromEditor, 0);
+    return;
+  }
+  // Smart bracket deletion: Backspace before a bracket deletes the bracket
+  // and its matching pair. Use setTimeout to defer re-render until DOM is stable.
+  if (event.key == "Backspace") {
+    var pairs = { "(": ")", "[": "]", "{": "}" };
+    var closers = { ")": "(", "]": "[", "}": "{" };
+    var start = executeThis.selectionStart;
+    var end = executeThis.selectionEnd;
+    if (start === end && start > 0) {
+      var value = executeThis.value;
+      var char = value[start - 1]; // The char we're about to delete
+      // Case 1: Immediately adjacent pair (auto-paired)
+      if (pairs[char] && value[start] === pairs[char]) {
+        event.preventDefault();
+        executeThis.value = value.slice(0, start - 1) + value.slice(start + 1);
+        executeThis.selectionStart = executeThis.selectionEnd = start - 1;
+        setTimeout(updateDraftFromEditor, 0);
+        return;
+      }
+      // Case 2: Bracket with no immediate pair — find matching bracket
+      if (pairs[char]) {
+        var closer = pairs[char];
+        var depth = 0;
+        var matchIdx = -1;
+        for (var i = start - 1; i < value.length; i++) {
+          if (value[i] === char) depth++;
+          if (value[i] === closer) {
+            depth--;
+            if (depth === 0) {
+              matchIdx = i;
+              break;
+            }
+          }
+        }
+        if (matchIdx > -1) {
+          event.preventDefault();
+          executeThis.value =
+            value.slice(0, start - 1) + value.slice(start, matchIdx) + value.slice(matchIdx + 1);
+          executeThis.selectionStart = executeThis.selectionEnd = start - 1;
+          setTimeout(updateDraftFromEditor, 0);
+          return;
+        }
+      }
+    }
+  }
+  applyAutoPair(event);
+}
+
+function runReplCode() {
+  try {
+    exec("( " + executeThis.value + " )");
+    setStatus("executed");
+    renderEditorDecorations();
+  } catch (error) {
+    setStatus("execute error");
+  }
+}
+
+function setDraftFromRuntime() {
+  var sourceWords = (words || []).slice();
+  if (sourceWords[0] == "(") {
+    sourceWords = sourceWords.slice(1);
+  }
+  executeThis.value = sourceWords.map(sourceWord).join(" ");
+  setStatus("runtime loaded");
+  renderEditorDecorations();
+}
+
+executeThis.addEventListener("keydown", handleEditorKeys);
+executeThis.addEventListener("input", debouncedDraftUpdate);
+executeThis.addEventListener("click", renderEditorDecorations);
+executeThis.addEventListener("keyup", renderEditorDecorations);
+executeThis.addEventListener("select", renderEditorDecorations);
+
+setStateChangeListener(function () {
+  setStatus("runtime updated");
+});
+
+window.runReplCode = runReplCode;
+window.setDraftFromRuntime = setDraftFromRuntime;
+
+seedRuntime();
+renderEditorDecorations();

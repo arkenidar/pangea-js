@@ -25,8 +25,10 @@ For now, source code is still central, but the project keeps moving toward a str
 
 ## Project files
 
-- `main.html`: browser UI/editor.
-- `main.js`: language runtime and operators.
+- `main.html`: browser UI/editor (now importing ESM runtime).
+- `src/browser/app.js`: browser adapter/editor logic.
+- `src/core/runtime.js`: shared language runtime and operators.
+- `src/cli/pangea.js`: minimal Node CLI entrypoint.
 - `factorial.sp`, `fizz-buzz.sp`: simple language examples.
 - `examples/`: extra samples.
 - `documentation/`: historical project notes.
@@ -40,6 +42,11 @@ Example using VS Code Live Server:
 1. Open the project folder.
 2. Start Live Server on `main.html`.
 3. Type code in the editor and click `execute`.
+
+CLI usage:
+
+1. `npm run cli -- factorial.sp`
+2. `npm run cli -- -e 'print "hello+cli"'`
 
 ## Design principles
 
@@ -66,7 +73,7 @@ If you use it for learning, feel free to fork it and adapt it.
 When changing editor CSS or token decorations, quickly verify overlay and caret alignment:
 
 1. Load this snippet in the editor:
-	`def factorial#1\nif ( arg 1 ) == 0 1 ( arg 1 ) * factorial ( arg 1 ) - 1\n\nprint factorial 5`
+   `def factorial#1\nif ( arg 1 ) == 0 1 ( arg 1 ) * factorial ( arg 1 ) - 1\n\nprint factorial 5`
 2. Place caret just after `(` in `factorial ( arg 1 ) - 1` and press `Backspace`.
 3. Confirm both parentheses are removed.
 4. Confirm visible text matches typed text at the caret position (no 1-char visual offset).

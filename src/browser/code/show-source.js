@@ -22,7 +22,6 @@
   var details = document.createElement("details");
   details.id = slug;
   details.className = "show-source-block";
-  details.open = true;
 
   var summary = document.createElement("summary");
   var titleLink = document.createElement("a");

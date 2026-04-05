@@ -14,49 +14,44 @@
       >
     </div>
 
-    <pre style="background-color: aquamarine">
-exec(`( print "fizz-buzz game"
-
-def multiple#2
-0 == ( ( arg 1 ) % ( arg 2 ) )
-
-def i#0
-times_count 1
-
-def multiple_of#1
-multiple i arg 1
-
-20 times (
-
-print
-"fizz-buzz" when multiple_of 15
-"fizz" when multiple_of 3
-"buzz" when multiple_of 5
-i
-)
-
-)`)
-</pre
-    >
-
-    <pre id="printOut" class="panel"></pre>
+    <div class="panel output-panel">
+      <pre id="printOut"></pre>
+      <div class="output-actions">
+        <button id="clearPrintOut" type="button">clear output</button>
+      </div>
+    </div>
 
     <div class="panel">
+      <div class="test-library" aria-label="test library">
+        <div class="row test-row">
+          <label for="testSelect">tests</label>
+          <select id="testSelect"></select>
+          <button id="loadSelectedTest" type="button">load</button>
+        </div>
+        <div id="testLibraryStatus" class="test-library-status"></div>
+      </div>
+
       <div class="row">
         <button onclick="runReplCode()">execute</button>
-        <button onclick="setDraftFromRuntime()">load runtime into editor</button>
+        <button onclick="clearOutputThenExecute()" type="button">clear output, then execute</button>
       </div>
       <div id="editorShell" class="editor-shell">
         <pre id="editorOverlay" class="editor-overlay" aria-hidden="true"></pre>
         <textarea id="executeThis" class="editor-input" spellcheck="false"></textarea>
       </div>
       <div class="status">
-        <span id="editorStatus">ready</span>
+        <span id="editorStatus"></span>
         · <span id="editorStats">tokens: 0</span> ·
         <span id="editorBalance">balanced</span>
         <div id="editorParseHint" class="parse-hint"></div>
         <div id="editorAssocHint" class="parse-hint parse-assoc"></div>
       </div>
+      <details class="advanced">
+        <summary>advanced</summary>
+        <div class="row">
+          <button onclick="setDraftFromRuntime()">load runtime into editor</button>
+        </div>
+      </details>
     </div>
 
     <script type="module" src="./app.js"></script>

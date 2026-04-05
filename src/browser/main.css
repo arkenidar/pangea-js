@@ -14,9 +14,21 @@ body {
 }
 
 #printOut {
+  margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.output-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.output-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .row {
@@ -29,6 +41,49 @@ body {
 button {
   font: inherit;
   padding: 0.3rem 0.6rem;
+}
+
+select,
+input {
+  font: inherit;
+}
+
+.test-library {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 0.6rem;
+  margin-bottom: 0.6rem;
+  background: #f8fafc;
+}
+
+.test-row {
+  align-items: center;
+}
+
+#testSelect {
+  min-width: 14rem;
+  max-width: 100%;
+  padding: 0.2rem 0.35rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.inline-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #334155;
+}
+
+.test-library-status {
+  color: #475569;
+  font-size: 0.92em;
+  min-height: 1.2rem;
+}
+
+.test-library-status.error {
+  color: #b91c1c;
 }
 
 .editor-shell {

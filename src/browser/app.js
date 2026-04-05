@@ -21,28 +21,6 @@ function seedRuntime() {
   1
   ( arg 1 ) * factorial ( arg 1 ) - 1
 print factorial 3 )`);
-
-  exec(`( print "fizz-buzz game"
-
-def multiple#2
-0 == ( ( arg 1 ) % ( arg 2 ) )
-
-def i#0
-times_count 1
-
-def multiple_of#1
-multiple i arg 1
-
-20 times (
-
-    print
-    "fizz-buzz" when multiple_of 15
-    "fizz" when multiple_of 3
-    "buzz" when multiple_of 5
-    i
-)
-
-)`);
 }
 var editorShell = document.getElementById("editorShell");
 var editorOverlay = document.getElementById("editorOverlay");
@@ -52,12 +30,102 @@ var editorStats = document.getElementById("editorStats");
 var editorBalance = document.getElementById("editorBalance");
 var editorParseHint = document.getElementById("editorParseHint");
 var editorAssocHint = document.getElementById("editorAssocHint");
+var printOut = document.getElementById("printOut");
+var clearPrintOut = document.getElementById("clearPrintOut");
+var testSelect = document.getElementById("testSelect");
+var loadSelectedTestButton = document.getElementById("loadSelectedTest");
+var testLibraryStatus = document.getElementById("testLibraryStatus");
 
 var draftTimer = null;
 var MIN_EDITOR_HEIGHT = 220;
 var MATCHING = { "(": ")", "[": "]", "{": "}" };
 var OPENING = Object.keys(MATCHING);
 var CLOSING = Object.values(MATCHING);
+var DEFAULT_TEST_LIBRARY = [
+  { label: "core: factorial", path: "../../tests/core/factorial.sp" },
+  { label: "core: fizz-buzz", path: "../../tests/core/fizz-buzz.sp" },
+  { label: "core: hello", path: "../../tests/core/hello.sp" },
+];
+var TEST_LIBRARY = DEFAULT_TEST_LIBRARY.slice();
+
+function setTestLibraryStatus(message, isError) {
+  if (!testLibraryStatus) return;
+  testLibraryStatus.textContent = message;
+  testLibraryStatus.classList.toggle("error", !!isError);
+}
+
+function populateTestLibrary() {
+  if (!testSelect) return;
+  testSelect.innerHTML = "";
+  for (var i = 0; i < TEST_LIBRARY.length; i++) {
+    var test = TEST_LIBRARY[i];
+    var option = document.createElement("option");
+    option.value = String(i);
+    option.textContent = test.label;
+    testSelect.appendChild(option);
+  }
+}
+
+function sanitizeManifest(items) {
+  if (!Array.isArray(items)) return [];
+  return items.filter(function (entry) {
+    return (
+      entry &&
+      typeof entry.label == "string" &&
+      entry.label.trim().length > 0 &&
+      typeof entry.path == "string" &&
+      entry.path.trim().length > 0
+    );
+  });
+}
+
+async function loadTestLibraryManifest() {
+  try {
+    var response = await fetch("./tests.manifest.json");
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    var manifest = await response.json();
+    var loadedTests = sanitizeManifest(manifest);
+    if (!loadedTests.length) throw new Error("manifest is empty");
+    TEST_LIBRARY = loadedTests;
+    populateTestLibrary();
+  } catch (error) {
+    TEST_LIBRARY = DEFAULT_TEST_LIBRARY.slice();
+    populateTestLibrary();
+    setTestLibraryStatus("manifest load failed, using defaults", true);
+  }
+}
+
+function selectedTest() {
+  if (!testSelect) return;
+  var selected = parseInt(testSelect.value, 10);
+  if (isNaN(selected) || !TEST_LIBRARY[selected]) return;
+  return TEST_LIBRARY[selected];
+}
+
+async function loadSelectedTest() {
+  var test = selectedTest();
+  if (!test) {
+    setTestLibraryStatus("no test selected", true);
+    return;
+  }
+  setTestLibraryStatus("loading " + test.path + " ...");
+
+  try {
+    var response = await fetch(test.path);
+    if (!response.ok) {
+      throw new Error("HTTP " + response.status + " while loading " + test.path);
+    }
+    var code = await response.text();
+    executeThis.value = code;
+    setStatus("test loaded");
+    renderEditorDecorations();
+    setTestLibraryStatus("loaded " + test.path);
+  } catch (error) {
+    console.error(error);
+    setTestLibraryStatus("failed to load " + test.path, true);
+    setStatus("test load error");
+  }
+}
 
 function escapeHtml(text) {
   return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -864,6 +932,11 @@ function applyAutoPair(event) {
 }
 
 function handleEditorKeys(event) {
+  if ((event.ctrlKey || event.metaKey) && event.key == "Enter") {
+    event.preventDefault();
+    runReplCode();
+    return;
+  }
   if (event.key == "Tab") {
     event.preventDefault();
     var start = executeThis.selectionStart;
@@ -948,12 +1021,41 @@ executeThis.addEventListener("click", renderEditorDecorations);
 executeThis.addEventListener("keyup", renderEditorDecorations);
 executeThis.addEventListener("select", renderEditorDecorations);
 
+if (testSelect) {
+  testSelect.addEventListener("change", function () {
+    loadSelectedTest();
+  });
+}
+
+if (loadSelectedTestButton) {
+  loadSelectedTestButton.addEventListener("click", function () {
+    loadSelectedTest();
+  });
+}
+
+function clearOutput(updateStatus) {
+  if (printOut) printOut.textContent = "";
+  if (updateStatus) setStatus("output cleared");
+}
+
+function clearOutputThenExecute() {
+  clearOutput(false);
+  runReplCode();
+}
+
+if (clearPrintOut) {
+  clearPrintOut.addEventListener("click", function () {
+    clearOutput(true);
+  });
+}
+
 setStateChangeListener(function () {
   setStatus("runtime updated");
 });
 
 window.runReplCode = runReplCode;
+window.clearOutputThenExecute = clearOutputThenExecute;
 window.setDraftFromRuntime = setDraftFromRuntime;
 
-seedRuntime();
+loadTestLibraryManifest();
 renderEditorDecorations();

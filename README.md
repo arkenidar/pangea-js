@@ -25,28 +25,64 @@ For now, source code is still central, but the project keeps moving toward a str
 
 ## Project files
 
-- `main.html`: browser UI/editor (now importing ESM runtime).
+- `src/browser/main.html`: browser UI/editor.
 - `src/browser/app.js`: browser adapter/editor logic.
+- `src/browser/tests.manifest.json`: browser test-library manifest.
+- `src/browser/code/show-source.js`: in-page source viewer helper.
 - `src/core/runtime.js`: shared language runtime and operators.
 - `src/cli/pangea.js`: minimal Node CLI entrypoint.
-- `factorial.sp`, `fizz-buzz.sp`: simple language examples.
+- `tests/core/*.sp`: core browser/CLI sample programs.
 - `examples/`: extra samples.
 - `documentation/`: historical project notes.
 
 ## Quick start
 
-Serve this folder with a static web server, then open `main.html`.
+Serve this folder with a static web server, then open `src/browser/main.html`.
 
 Example using VS Code Live Server:
 
 1. Open the project folder.
-2. Start Live Server on `main.html`.
+2. Start Live Server on `src/browser/main.html`.
 3. Type code in the editor and click `execute`.
 
 CLI usage:
 
 1. `npm run cli -- factorial.sp`
 2. `npm run cli -- -e 'print "hello cli"'`
+
+## Browser test library
+
+The browser page at `src/browser/main.html` includes a Test Library panel.
+
+- Tests are loaded from `src/browser/tests.manifest.json`.
+- Changing the test dropdown auto-loads the selected file into the editor.
+- `load` also loads the currently selected test into the editor.
+- Loading a test does not execute it automatically.
+- Use `execute` (or `Ctrl+Enter` / `Cmd+Enter`) to run editor content.
+
+Manifest format:
+
+```json
+[{ "label": "core: factorial", "path": "../../tests/core/factorial.sp" }]
+```
+
+Each item needs:
+
+- `label`: text shown in the test dropdown.
+- `path`: file path resolved from `src/browser/main.html`.
+
+If the manifest cannot be loaded, the app falls back to an internal default list.
+
+## Browser controls
+
+- `clear output`: clears only the output panel.
+- `clear output, then execute`: clears output and then runs the current editor content.
+- `advanced` -> `load runtime into editor`: optional helper to load runtime source into the editor.
+- Source-view panels (`main.html`, `app.js`, `../core/runtime.js`) are available at the bottom and start collapsed.
+
+## Browser editor shortcuts
+
+- `Ctrl+Enter` (or `Cmd+Enter`): run current editor code.
 
 ## Argument shorthand
 

@@ -35,7 +35,7 @@ async function main() {
   }
 
   try {
-    exec(code);
+    exec("( " + code + " )");
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;

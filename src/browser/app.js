@@ -22,7 +22,7 @@ function seedRuntime() {
   ( arg 1 ) * factorial ( arg 1 ) - 1
 print factorial 3 )`);
 
-  exec(`( print "fizz-buzz+game"
+  exec(`( print "fizz-buzz game"
 
 def multiple#2
 0 == ( ( arg 1 ) % ( arg 2 ) )
@@ -66,11 +66,7 @@ function escapeHtml(text) {
 function sourceWord(word) {
   if (typeof parse(word) != "string") return word;
   var decoded = parse(word);
-  var parts = decoded.split("+");
-  parts = parts.map(function (part) {
-    return part.replace(/ /g, "+");
-  });
-  return JSON.stringify(parts.join("(+)"));
+  return JSON.stringify(decoded);
 }
 
 function setStatus(text) {

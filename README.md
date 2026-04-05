@@ -46,7 +46,7 @@ Example using VS Code Live Server:
 CLI usage:
 
 1. `npm run cli -- factorial.sp`
-2. `npm run cli -- -e 'print "hello+cli"'`
+2. `npm run cli -- -e 'print "hello cli"'`
 
 ## Argument shorthand
 

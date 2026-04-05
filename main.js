@@ -1,5 +1,5 @@
 /*
-var code1=`times 2 ( print add ( add 1.5 2 ) 3 print "ciao+Dario!+1(+)2=3+using+((+))" )`
+var code1=`times 2 ( print add ( add 1.5 2 ) 3 print "ciao Dario! 1+2=3 using (( ))" )`
 var defs1={print:1, add:2}
 var program1={code:code1,defs:defs1,start:2}
 
@@ -47,7 +47,7 @@ function exec(code) {
       word.indexOf("#") != -1 &&
       /* "word" should not be a JSON string:
             valid, process it: function_name#arity
-            not valid, ignore it, skip it: "JSON+string+containing+#+hash-mark"
+            not valid, ignore it, skip it: "JSON string containing # hash-mark"
             */
       typeof parse(word) != "string"
     ) {
@@ -97,14 +97,14 @@ function exec(code) {
 function main1() {
   var out = console.log;
 
-  code = `print "hello+world!"`;
+  code = `print "hello world!"`;
   ///exec(code)
 
   exec("2 times " + code);
   //out("out:",exec("1 + 2")) // add 1 2
 
   // add ( add 1.5 2 ) 3
-  var code1 = `2 times ( print 1.5 + 2 + 3 print "ciao+Dario!+1(+)2=3+using+((+))" )`;
+  var code1 = `2 times ( print 1.5 + 2 + 3 print "ciao Dario! 1+2=3 using (( ))" )`;
   exec(code1);
 
   exec(`( def times_test#1 ( arg 1 ) times print "*time*"
@@ -130,7 +130,7 @@ function main1() {
         dont "tested:params/arity"
         def func#1 (
             print + arg 1 3
-            print "func+return"
+            print "func return"
         )
         func 2
         
@@ -141,7 +141,7 @@ function main1() {
         1
         * arg 1 factorial + -1 arg 1
     )
-    print "factorial+of+3"
+    print "factorial of 3"
     print factorial 3
     
     )`;
@@ -154,7 +154,7 @@ function main1() {
   exec(`times 2 times 3 ( print times_count 2 print times_count 1 )`);
   // 1 1 1 2 1 3 2 1 2 2 2 3
 
-  exec(`( print "fizz-buzz+game"
+  exec(`( print "fizz-buzz game"
 
 def multiple#2
 == 0 modulus arg 1 arg 2
@@ -710,7 +710,6 @@ function parse(text) {
 
 function parseCode(code) {
   var words = code.split(/\s+/); // local variable
-  words = words.map(handlePlus);
   words = words.map(normalizeWordToken);
   return words;
 }
@@ -733,16 +732,6 @@ function normalizeWordToken(word) {
   }
 
   return normalizeIdentifier(word);
-}
-
-function handlePlus(word) {
-  if (!isString(word)) return word;
-  word = parse(word);
-  var parts = word.split("(+)");
-  parts = parts.map((part) => part.replace(/\+/g, " "));
-  word = parts.join("+");
-  word = JSON.stringify(word);
-  return word;
 }
 
 //main1()
@@ -771,7 +760,7 @@ print factorial 3 )`);
 
 //main1()
 
-exec(`( print "fizz-buzz+game"
+exec(`( print "fizz-buzz game"
 
 def multiple#2
 0 == ( ( arg 1 ) % ( arg 2 ) )

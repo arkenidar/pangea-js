@@ -1,5 +1,5 @@
 /*
-var code1=`times 2 ( print add ( add 1.5 2 ) 3 print "ciao+Dario!+1(+)2=3+using+((+))" )`
+var code1=`times 2 ( print add ( add 1.5 2 ) 3 print "ciao Dario! 1+2=3 using (( ))" )`
 var defs1={print:1, add:2}
 var program1={code:code1,defs:defs1,start:2}
 
@@ -49,7 +49,7 @@ function exec(code) {
       word.indexOf("#") != -1 &&
       /* "word" should not be a JSON string:
             valid, process it: function_name#arity
-            not valid, ignore it, skip it: "JSON+string+containing+#+hash-mark"
+            not valid, ignore it, skip it: "JSON string containing # hash-mark"
             */
       typeof parse(word) != "string"
     ) {
@@ -116,14 +116,14 @@ function resetRuntime() {
 function main1() {
   var out = console.log;
 
-  code = `print "hello+world!"`;
+  code = `print "hello world!"`;
   ///exec(code)
 
   exec("2 times " + code);
   //out("out:",exec("1 + 2")) // add 1 2
 
   // add ( add 1.5 2 ) 3
-  var code1 = `2 times ( print 1.5 + 2 + 3 print "ciao+Dario!+1(+)2=3+using+((+))" )`;
+  var code1 = `2 times ( print 1.5 + 2 + 3 print "ciao Dario! 1+2=3 using (( ))" )`;
   exec(code1);
 
   exec(`( def times_test#1 ( arg 1 ) times print "*time*"
@@ -149,7 +149,7 @@ function main1() {
         dont "tested:params/arity"
         def func#1 (
             print + arg 1 3
-            print "func+return"
+            print "func return"
         )
         func 2
         
@@ -160,7 +160,7 @@ function main1() {
         1
         * arg 1 factorial + -1 arg 1
     )
-    print "factorial+of+3"
+    print "factorial of 3"
     print factorial 3
     
     )`;
@@ -173,7 +173,7 @@ function main1() {
   exec(`times 2 times 3 ( print times_count 2 print times_count 1 )`);
   // 1 1 1 2 1 3 2 1 2 2 2 3
 
-  exec(`( print "fizz-buzz+game"
+  exec(`( print "fizz-buzz game"
 
 def multiple#2
 == 0 modulus arg 1 arg 2
@@ -716,9 +716,6 @@ function phraseLength(wordIndex, skipOperator = false) {
 function isNumber(text) {
   return typeof parse(text) == "number";
 }
-function isString(text) {
-  return typeof parse(text) == "string";
-}
 function parse(text) {
   try {
     return JSON.parse(text);
@@ -727,17 +724,80 @@ function parse(text) {
   }
 }
 
+function tokenizeCode(code) {
+  var words = [];
+  var token = [];
+  var quoted = [];
+  var inString = false;
+  var escaping = false;
+
+  function flushToken() {
+    if (!token.length) return;
+    words.push(token.join(""));
+    token = [];
+  }
+
+  function flushQuoted() {
+    words.push(JSON.stringify(quoted.join("")));
+    quoted = [];
+  }
+
+  function appendEscape(char) {
+    if (char == '"') quoted.push('"');
+    else if (char == "\\") quoted.push("\\");
+    else if (char == "n") quoted.push("\n");
+    else if (char == "t") quoted.push("\t");
+    else throw new Error("invalid escape sequence: \\" + char);
+  }
+
+  for (var i = 0; i < code.length; i++) {
+    var char = code[i];
+
+    if (inString) {
+      if (escaping) {
+        appendEscape(char);
+        escaping = false;
+      } else if (char == "\\") {
+        escaping = true;
+      } else if (char == '"') {
+        flushQuoted();
+        inString = false;
+      } else {
+        quoted.push(char);
+      }
+      continue;
+    }
+
+    if (/\s/.test(char)) {
+      flushToken();
+      continue;
+    }
+
+    if (char == '"') {
+      flushToken();
+      inString = true;
+      continue;
+    }
+
+    token.push(char);
+  }
+
+  if (escaping) throw new Error("unterminated escape sequence in string literal");
+  if (inString) throw new Error("unterminated string literal");
+
+  flushToken();
+  return words;
+}
+
 function parseCode(code) {
-  var words = code.split(/\s+/).filter(Boolean); // local variable
-  words = words.map(handlePlus);
+  var words = tokenizeCode(code);
   words = words.flatMap(expandArgShorthand);
   words = words.map(normalizeWordToken);
   return words;
 }
 
 function parseSurfaceCode(code) {
-  var words = code.split(/\s+/).filter(Boolean);
-  words = words.map(handlePlus);
+  var words = tokenizeCode(code);
   words = words.map(normalizeWordToken);
   return words;
 }
@@ -767,16 +827,6 @@ function normalizeWordToken(word) {
   }
 
   return normalizeIdentifier(word);
-}
-
-function handlePlus(word) {
-  if (!isString(word)) return word;
-  word = parse(word);
-  var parts = word.split("(+)");
-  parts = parts.map((part) => part.replace(/\+/g, " "));
-  word = parts.join("+");
-  word = JSON.stringify(word);
-  return word;
 }
 
 export {

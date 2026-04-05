@@ -44,7 +44,7 @@ ABOUT USING COMMENTS
 
 NOTE: "comment" is an alias of "dont"
 
-comment "one+line+comment"
+comment "one line comment"
 
 comment
 "

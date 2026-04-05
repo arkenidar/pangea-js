@@ -4,6 +4,7 @@ import {
   words,
   parse,
   parseCode,
+  parseSurfaceCode,
   normalizeWordToken,
   setPrintSink,
   setStateChangeListener,
@@ -85,8 +86,35 @@ function syncEditorHeight() {
 }
 
 function normalizeLookupWord(word) {
+  if (typeof word == "string") {
+    var match = word.match(/^\$(\d+)$/);
+    if (match) return "arg";
+  }
   if (typeof normalizeWordToken == "function") return normalizeWordToken(word);
   return word;
+}
+
+function surfaceWords(runtimeWords) {
+  var out = [];
+  for (var i = 0; i < runtimeWords.length; i++) {
+    var word = runtimeWords[i];
+    var p1 = runtimeWords[i + 1];
+    var next = runtimeWords[i + 1];
+    var p2 = runtimeWords[i + 2];
+    var p3 = runtimeWords[i + 3];
+    if (word == "(" && p1 == "arg" && typeof p2 == "string" && /^\d+$/.test(p2) && p3 == ")") {
+      out.push("$" + p2);
+      i += 3;
+      continue;
+    }
+    if (word == "arg" && typeof next == "string" && /^\d+$/.test(next)) {
+      out.push("$" + next);
+      i++;
+      continue;
+    }
+    out.push(word);
+  }
+  return out;
 }
 
 function tokenClass(token) {
@@ -523,6 +551,7 @@ function checkBalance(text) {
 
 function editorWordArity(word) {
   if (!word) return;
+  if (/^\$\d+$/.test(word)) return 0;
   if (word.indexOf("#") != -1) {
     var parts = word.split("#");
     var maybeArity = parseInt(parts[1]);
@@ -772,7 +801,8 @@ function updateParseHint(text) {
     return;
   }
 
-  var tokens = parseCode(trimmed).filter(function (token) {
+  var parseForHint = typeof parseSurfaceCode == "function" ? parseSurfaceCode : parseCode;
+  var tokens = parseForHint(trimmed).filter(function (token) {
     return token.length;
   });
   if (!tokens.length) {
@@ -910,6 +940,7 @@ function setDraftFromRuntime() {
   if (sourceWords[0] == "(") {
     sourceWords = sourceWords.slice(1);
   }
+  sourceWords = surfaceWords(sourceWords);
   executeThis.value = sourceWords.map(sourceWord).join(" ");
   setStatus("runtime loaded");
   renderEditorDecorations();

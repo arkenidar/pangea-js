@@ -48,6 +48,21 @@ CLI usage:
 1. `npm run cli -- factorial.sp`
 2. `npm run cli -- -e 'print "hello+cli"'`
 
+## Argument shorthand
+
+Function arguments support both explicit and shorthand forms:
+
+- Explicit: `arg 1`, `arg 2`, ...
+- Shorthand: `$1`, `$2`, ...
+
+The shorthand is lowered early during parsing to keep interpretation stable in infix expressions:
+
+- Surface: `$1`
+- Internal word-code: `( arg 1 )`
+
+In the browser editor, loading code back from runtime preserves surface shorthand by rendering
+`( arg N )` as `$N` when possible.
+
 ## Design principles
 
 - Keep it playful: this is a toy language, not a product.

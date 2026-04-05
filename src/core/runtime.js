@@ -730,8 +730,23 @@ function parse(text) {
 function parseCode(code) {
   var words = code.split(/\s+/).filter(Boolean); // local variable
   words = words.map(handlePlus);
+  words = words.flatMap(expandArgShorthand);
   words = words.map(normalizeWordToken);
   return words;
+}
+
+function parseSurfaceCode(code) {
+  var words = code.split(/\s+/).filter(Boolean);
+  words = words.map(handlePlus);
+  words = words.map(normalizeWordToken);
+  return words;
+}
+
+function expandArgShorthand(word) {
+  if (typeof word != "string") return [word];
+  var match = word.match(/^\$(\d+)$/);
+  if (!match) return [word];
+  return ["(", "arg", match[1], ")"];
 }
 
 function normalizeWordToken(word) {
@@ -774,6 +789,7 @@ export {
   phraseLengths,
   parse,
   parseCode,
+  parseSurfaceCode,
   normalizeWordToken,
   phraseLength,
   wordExec,

@@ -6,13 +6,6 @@
       "request": "launch",
       "name": "Launch in Integrated Browser",
       "url": "file://${workspaceFolder}/main.html"
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Launch Program",
-      "skipFiles": ["<node_internals>/**"],
-      "program": "${workspaceFolder}/main.js"
     }
   ]
 }

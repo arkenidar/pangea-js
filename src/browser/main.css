@@ -175,3 +175,68 @@ button {
   border-radius: 3px;
   box-shadow: inset 0 -1px 0 rgba(217, 119, 6, 0.55);
 }
+
+/* --- Source viewer --- */
+
+#show-source-nav {
+  position: sticky;
+  top: 0;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+  background: #f9fafb;
+  border: 1px solid #d4d4d4;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  font-size: 0.9em;
+  z-index: 10;
+}
+
+#show-source-nav::before {
+  content: "sources:";
+  color: #6b7280;
+  font-size: 0.85em;
+  margin-right: 0.25rem;
+}
+
+#show-source-nav a {
+  color: #2563eb;
+}
+
+.show-source-block {
+  border: 1px solid #d4d4d4;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.show-source-block > summary {
+  cursor: pointer;
+  padding: 0.4rem 0.75rem;
+  background: #f9fafb;
+  font-weight: 600;
+  font-size: 0.9em;
+  user-select: none;
+  border-bottom: 1px solid transparent;
+}
+
+.show-source-block[open] > summary {
+  border-bottom-color: #d4d4d4;
+}
+
+.show-source-block > summary a {
+  color: #2563eb;
+  pointer-events: none; /* clicking the summary toggles; use nav links to open files */
+}
+
+.show-source-block pre.show_source {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  overflow-y: scroll;
+  max-height: 420px;
+  background: #fff;
+  font-size: 0.85em;
+  line-height: 1.5;
+}

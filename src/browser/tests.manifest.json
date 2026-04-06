@@ -1,14 +1,18 @@
 [
   {
-    "label": "core: hello",
+    "label": "core: hello beginnings",
     "path": "../../tests/core/hello.sp"
   },
   {
-    "label": "core: factorial",
+    "label": "core: multiplication table",
+    "path": "../../tests/core/mult-table.sp"
+  },
+  {
+    "label": "core: recursive factorial",
     "path": "../../tests/core/factorial.sp"
   },
   {
-    "label": "core: fizz-buzz",
+    "label": "core: fizz-buzz game",
     "path": "../../tests/core/fizz-buzz.sp"
   }
 ]

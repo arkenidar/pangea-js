@@ -39,6 +39,11 @@ For now, source code is still central, but the project keeps moving toward a str
 
 Serve this folder with a static web server, then open `src/browser/main.html`.
 
+Hosted version (GitHub Pages):
+
+- https://arkenidar.github.io/pangea-js/src/browser/main.html
+- https://github.arkenidar.com/pangea-js/src/browser/main.html
+
 Example using VS Code Live Server:
 
 1. Open the project folder.
